@@ -662,23 +662,23 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
 
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden relative">
-      {/* Botão Voltar */}
+      {/* Botão Voltar - Menor */}
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 z-50 bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-xl hover:bg-white/20 transition flex items-center gap-2 border border-white/20"
+        className="absolute top-4 left-4 z-50 bg-white/10 backdrop-blur-md text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition flex items-center gap-1.5 border border-white/20 text-sm"
       >
-        <ArrowLeft size={20} />
-        <span className="font-bold">Voltar</span>
+        <ArrowLeft size={16} />
+        <span className="font-semibold">Voltar</span>
       </button>
 
-      {/* Logo */}
-      <div className="absolute top-6 right-6 flex items-center gap-3 text-white">
-        <TrendingUp size={32} />
-        <span className="text-2xl font-bold">SalesTracker</span>
+      {/* Logo - Menor */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 text-white">
+        <TrendingUp size={20} />
+        <span className="text-lg font-bold">SalesTracker</span>
       </div>
 
       {/* Bento Grid Layout */}
-      <div className="h-full w-full p-6 pt-20">
+      <div className="h-full w-full p-6 pt-14">
         <div className="grid grid-cols-12 grid-rows-12 gap-4 h-full">
           
           {/* Widget 1: Gráfico Total de Vendas de Todos os Meses */}
@@ -852,48 +852,48 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
           </div>
 
           {/* Widget 4: Falta para Meta */}
-          <div className="col-span-6 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+          <div className="col-span-6 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
             
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-2.5 rounded-xl shadow-lg shadow-orange-500/30">
-                  <Target size={28} className="text-white" />
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-2 rounded-xl shadow-lg shadow-orange-500/30">
+                  <Target size={24} className="text-white" />
                 </div>
-                <h3 className="text-white text-lg font-bold">Meta do Mês</h3>
+                <h3 className="text-white text-base font-bold">Meta do Mês</h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div>
-                  <div className="flex justify-between text-white/90 text-sm mb-1.5">
+                  <div className="flex justify-between text-white/90 text-xs mb-1">
                     <span>Realizado</span>
                     <span className="font-bold">{progressoMeta.toFixed(1)}%</span>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/20">
+                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/20">
                     <div
                       className="bg-gradient-to-r from-orange-400 to-amber-400 h-full rounded-full transition-all duration-500 shadow-lg"
                       style={{ width: `${Math.min(progressoMeta, 100)}%` }}
                     />
                   </div>
                 </div>
-                <div className="text-white text-3xl font-bold drop-shadow-lg">
+                <div className="text-white text-2xl font-bold drop-shadow-lg">
                   {formatCurrency(totalMonth)}
                 </div>
-                <div className="text-white/70 text-base font-medium">
+                <div className="text-white/70 text-sm font-medium">
                   de {formatCurrency(metaMensal)}
                 </div>
                 {metaMensal === 0 ? (
-                  <div className="text-orange-300 text-sm font-semibold flex items-center gap-2 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
-                    <Target size={16} />
-                    Configure uma meta na aba "Metas"
+                  <div className="text-orange-300 text-xs font-semibold flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-1.5 rounded-lg border border-orange-500/20">
+                    <Target size={14} />
+                    Configure uma meta
                   </div>
                 ) : metaBatida ? (
-                  <div className="text-green-300 text-base font-semibold flex items-center gap-2 bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30">
-                    <CheckCircle size={20} />
+                  <div className="text-green-300 text-sm font-semibold flex items-center gap-1.5 bg-green-500/20 px-2.5 py-1.5 rounded-lg border border-green-500/30">
+                    <CheckCircle size={16} />
                     Meta Batida! 🎉
                   </div>
                 ) : (
-                  <div className="text-yellow-300 text-base font-semibold bg-yellow-500/10 px-3 py-2 rounded-lg border border-yellow-500/20">
+                  <div className="text-yellow-300 text-sm font-semibold bg-yellow-500/10 px-2.5 py-1.5 rounded-lg border border-yellow-500/20">
                     Faltam {formatCurrency(faltaMeta)}
                   </div>
                 )}

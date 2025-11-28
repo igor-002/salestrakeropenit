@@ -36,6 +36,12 @@ import {
   Layers,
   TrendingDown,
   Shield,
+  Tv,
+  ArrowLeft,
+  Target,
+  CheckCircle,
+  XCircle,
+  Upload,
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app'; // Importação corrigida
 import {
@@ -514,6 +520,579 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- TV DASHBOARD (FULL SCREEN BENTO BOX 1920x1080) ---
+const TVDashboard = ({ sales, metaMensal, onBack }) => {
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [canceladosIndex, setCanceladosIndex] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Alternar carrossel principal a cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % 3); // 0=Mês, 1=Semana, 2=Dia
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Alternar carrossel de cancelados a cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCanceladosIndex((prev) => (prev + 1) % 2); // 0=Número, 1=Turn Over %
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isSameMonth = (d) => {
+    if (!d) return false;
+    const date = d.toDate ? d.toDate() : new Date(d);
+    return (
+      date.getMonth() === selectedDate.getMonth() &&
+      date.getFullYear() === selectedDate.getFullYear()
+    );
+  };
+
+  const isSameWeek = (d) => {
+    if (!d) return false;
+    const date = d.toDate ? d.toDate() : new Date(d);
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    return date >= startOfWeek && date <= endOfWeek;
+  };
+
+  const isToday = (d) => {
+    if (!d) return false;
+    const date = d.toDate ? d.toDate() : new Date(d);
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const salesInMonth = sales.filter((s) => isSameMonth(s.createdAt));
+  const salesInWeek = sales.filter((s) => isSameWeek(s.createdAt));
+  const salesToday = sales.filter((s) => isToday(s.createdAt));
+
+  const totalMonth = salesInMonth.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalWeek = salesInWeek.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalDay = salesToday.reduce((acc, s) => acc + (s.valor || 0), 0);
+
+  const ticketMedio = salesInMonth.length > 0 ? totalMonth / salesInMonth.length : 0;
+  const cancelados = salesInMonth.filter((s) => s.status === 'cancelado').length;
+  const totalClientes = salesInMonth.length;
+  const turnOverRate = totalClientes > 0 ? (cancelados / totalClientes) * 100 : 0;
+  const faltaMeta = metaMensal > 0 ? Math.max(0, metaMensal - totalMonth) : 0;
+  const progressoMeta = metaMensal > 0 ? (totalMonth / metaMensal) * 100 : 0;
+  const metaBatida = metaMensal > 0 && totalMonth >= metaMensal;
+
+  // Gráfico todos os meses (últimos 12)
+  const monthlyData = useMemo(() => {
+    const data = [];
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthSales = sales.filter((s) => {
+        if (!s.createdAt) return false;
+        const saleDate = s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+        return (
+          saleDate.getMonth() === date.getMonth() &&
+          saleDate.getFullYear() === date.getFullYear()
+        );
+      });
+      const total = monthSales.reduce((acc, s) => acc + (s.valor || 0), 0);
+      data.push({
+        month: getShortMonthName(date.getMonth()),
+        total: total,
+        count: monthSales.length,
+      });
+    }
+    return data;
+  }, [sales]);
+
+  const maxMonthly = Math.max(...monthlyData.map((m) => m.total), 1);
+
+  // Gráfico semana (últimos 7 dias)
+  const weeklyData = useMemo(() => {
+    const data = [];
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const daySales = sales.filter((s) => {
+        if (!s.createdAt) return false;
+        const saleDate = s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+        return saleDate >= date && saleDate <= endDate;
+      });
+      
+      const total = daySales.reduce((acc, s) => acc + (s.valor || 0), 0);
+      data.push({
+        day: dayNames[date.getDay()],
+        date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        total: total,
+        count: daySales.length,
+      });
+    }
+    return data;
+  }, [sales]);
+
+  const maxWeekly = Math.max(...weeklyData.map((d) => d.total), 1);
+
+  const carouselData = [
+    { title: 'Vendas do Mês', data: monthlyData, max: maxMonthly, period: 'Mês' },
+    { title: 'Vendas da Semana', data: weeklyData, max: maxWeekly, period: 'Semana' },
+    { title: 'Vendas de Hoje', data: [{ label: 'Hoje', total: totalDay, count: salesToday.length }], max: totalDay || 1, period: 'Dia' },
+  ];
+
+  const currentCarousel = carouselData[carouselIndex];
+
+  return (
+    <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden relative">
+      {/* Botão Voltar */}
+      <button
+        onClick={onBack}
+        className="absolute top-6 left-6 z-50 bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-xl hover:bg-white/20 transition flex items-center gap-2 border border-white/20"
+      >
+        <ArrowLeft size={20} />
+        <span className="font-bold">Voltar</span>
+      </button>
+
+      {/* Logo */}
+      <div className="absolute top-6 right-6 flex items-center gap-3 text-white">
+        <TrendingUp size={32} />
+        <span className="text-2xl font-bold">SalesTracker</span>
+      </div>
+
+      {/* Bento Grid Layout */}
+      <div className="h-full w-full p-8 pt-24">
+        <div className="grid grid-cols-12 grid-rows-12 gap-6 h-full">
+          
+          {/* Widget 1: Gráfico Total de Vendas de Todos os Meses */}
+          <div className="col-span-6 row-span-6 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
+            <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-3">
+              <BarChart2 size={24} className="text-blue-400" />
+              Vendas - Últimos 12 Meses
+            </h3>
+            <div className="h-[calc(100%-60px)] flex items-end justify-between gap-1.5 px-2">
+              {monthlyData.map((month, i) => {
+                const heightPercent = maxMonthly > 0 ? (month.total / maxMonthly) * 100 : 0;
+                const barHeight = month.total > 0 ? Math.max(heightPercent, 20) : 5;
+                
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
+                    {/* Label valor */}
+                    {month.total > 0 && (
+                      <div className="text-white text-[10px] font-bold whitespace-nowrap bg-gradient-to-r from-blue-500/80 to-cyan-500/80 px-2 py-1 rounded-full shadow-lg">
+                        {month.total >= 1000 ? `${(month.total / 1000).toFixed(1)}k` : month.total.toFixed(0)}
+                      </div>
+                    )}
+                    
+                    {/* Barra */}
+                    <div 
+                      className="w-full bg-gradient-to-t from-blue-500 via-blue-400 to-cyan-300 rounded-t-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-400/50 hover:from-blue-400 hover:via-blue-300 hover:to-cyan-200 transition-all duration-300 relative group"
+                      style={{ height: `${barHeight}%` }}
+                    >
+                      {/* Brilho interno */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 rounded-t-xl"></div>
+                      
+                      {/* Contagem dentro da barra */}
+                      {month.count > 0 && barHeight > 30 && (
+                        <div className="absolute top-2 inset-x-0 text-center text-white text-[9px] font-bold drop-shadow-md">
+                          {month.count}
+                        </div>
+                      )}
+                      
+                      {/* Tooltip hover */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
+                        {formatCurrency(month.total)}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                    
+                    {/* Label mês */}
+                    <div className="text-white/90 text-[11px] font-semibold mt-1">
+                      {month.month}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Widget 2: Carrossel Mês/Semana/Dia */}
+          <div className="col-span-6 row-span-6 bg-gradient-to-br from-slate-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl relative">
+            {/* Indicadores do carrossel */}
+            <div className="absolute top-4 right-4 flex gap-2 z-10">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={`h-2 rounded-full transition-all ${
+                    i === carouselIndex ? 'bg-gradient-to-r from-blue-400 to-cyan-400 w-8 shadow-lg' : 'bg-white/30 w-2'
+                  }`}
+                />
+              ))}
+            </div>
+            
+            <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-3">
+              <Activity size={24} className="text-cyan-400" />
+              {currentCarousel.title}
+            </h3>
+            
+            <div className="h-[calc(100%-60px)]">
+              {carouselIndex === 2 ? (
+                /* Visualização "Hoje" */
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="text-white text-7xl font-bold mb-4 drop-shadow-2xl">
+                    {formatCurrency(totalDay)}
+                  </div>
+                  <div className="text-white text-2xl font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-6 py-3 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
+                    {salesToday.length} {salesToday.length === 1 ? 'venda' : 'vendas'}
+                  </div>
+                </div>
+              ) : carouselIndex === 0 ? (
+                /* Visualização "Vendas do Mês" - Valor Grande */
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="text-white text-7xl font-bold mb-4 drop-shadow-2xl">
+                    {formatCurrency(totalMonth)}
+                  </div>
+                  <div className="text-white text-2xl font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-6 py-3 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
+                    {salesInMonth.length} {salesInMonth.length === 1 ? 'venda no mês' : 'vendas no mês'}
+                  </div>
+                </div>
+              ) : (
+                /* Gráfico de barras - Apenas para "Vendas da Semana" */
+                <div className="h-full flex items-end justify-between gap-1.5 px-2">
+                  {currentCarousel.data.map((item, i) => {
+                    const heightPercent = currentCarousel.max > 0 ? (item.total / currentCarousel.max) * 100 : 0;
+                    const barHeight = item.total > 0 ? Math.max(heightPercent, 20) : 5;
+                    
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
+                        {/* Label valor */}
+                        {item.total > 0 && (
+                          <div className="text-white text-[10px] font-bold whitespace-nowrap bg-gradient-to-r from-cyan-500/80 to-blue-500/80 px-2 py-1 rounded-full shadow-lg">
+                            {item.total >= 1000 ? `${(item.total / 1000).toFixed(1)}k` : item.total.toFixed(0)}
+                          </div>
+                        )}
+                        
+                        {/* Barra */}
+                        <div 
+                          className="w-full bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-300 rounded-t-xl shadow-lg shadow-cyan-500/30 hover:shadow-cyan-400/50 hover:from-cyan-400 hover:via-blue-300 hover:to-cyan-200 transition-all duration-300 relative group"
+                          style={{ height: `${barHeight}%` }}
+                        >
+                          {/* Brilho interno */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 rounded-t-xl"></div>
+                          
+                          {/* Contagem dentro da barra */}
+                          {item.count > 0 && barHeight > 30 && (
+                            <div className="absolute top-2 inset-x-0 text-center text-white text-[9px] font-bold drop-shadow-md">
+                              {item.count}
+                            </div>
+                          )}
+                          
+                          {/* Tooltip hover */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
+                            {formatCurrency(item.total)}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
+                        
+                        {/* Label */}
+                        <div className="text-center mt-1">
+                          <div className="text-white/90 text-[11px] font-semibold">
+                            {item.month || item.day || item.label}
+                          </div>
+                          {item.date && (
+                            <div className="text-white/60 text-[9px]">{item.date}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Widget 3: Ticket Médio */}
+          <div className="col-span-4 row-span-6 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+            {/* Efeito de fundo */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
+            
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-4 rounded-2xl shadow-lg shadow-emerald-500/30 mb-4">
+                <DollarSign size={48} className="text-white" />
+              </div>
+              <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+                Ticket Médio
+              </h3>
+              <div className="text-white text-6xl font-bold mb-2 drop-shadow-lg">
+                {formatCurrency(ticketMedio)}
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                <p className="text-white/80 text-base font-medium">
+                  {salesInMonth.length} vendas no mês
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 4: Falta para Meta */}
+          <div className="col-span-4 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+            {/* Efeito de fundo */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-3 rounded-xl shadow-lg shadow-orange-500/30">
+                  <Target size={36} className="text-white" />
+                </div>
+                <h3 className="text-white text-xl font-bold">Meta do Mês</h3>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-white/90 text-sm mb-2">
+                    <span>Realizado</span>
+                    <span className="font-bold">{progressoMeta.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden border border-white/20">
+                    <div
+                      className="bg-gradient-to-r from-orange-400 to-amber-400 h-full rounded-full transition-all duration-500 shadow-lg"
+                      style={{ width: `${Math.min(progressoMeta, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-white text-5xl font-bold drop-shadow-lg">
+                  {formatCurrency(totalMonth)}
+                </div>
+                <div className="text-white/70 text-lg font-medium">
+                  de {formatCurrency(metaMensal)}
+                </div>
+                {metaMensal === 0 ? (
+                  <div className="text-orange-300 text-lg font-semibold flex items-center gap-2 bg-orange-500/10 px-4 py-3 rounded-lg border border-orange-500/20">
+                    <Target size={20} />
+                    Configure uma meta na aba "Metas"
+                  </div>
+                ) : metaBatida ? (
+                  <div className="text-green-300 text-xl font-semibold flex items-center gap-2 bg-green-500/20 px-4 py-3 rounded-lg border border-green-500/30">
+                    <CheckCircle size={24} />
+                    Meta Batida! 🎉
+                  </div>
+                ) : (
+                  <div className="text-yellow-300 text-xl font-semibold bg-yellow-500/10 px-4 py-3 rounded-lg border border-yellow-500/20">
+                    Faltam {formatCurrency(faltaMeta)}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 5: Cancelamentos (Carrossel) */}
+          <div className="col-span-4 row-span-6 bg-gradient-to-br from-red-900/40 to-rose-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+            {/* Efeito de fundo */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent"></div>
+            
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-4 rounded-2xl shadow-lg shadow-red-500/30 mb-4">
+                <XCircle size={48} className="text-white" />
+              </div>
+              
+              {canceladosIndex === 0 ? (
+                <>
+                  <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+                    Cancelamentos
+                  </h3>
+                  <div className="text-white text-7xl font-bold mb-2 drop-shadow-lg">
+                    {cancelados}
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                    <p className="text-white/80 text-base font-medium">
+                      no mês de {getMonthName(selectedDate).split(' ')[0]}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+                    Turn Over
+                  </h3>
+                  <div className="text-white text-7xl font-bold mb-2 drop-shadow-lg">
+                    {turnOverRate.toFixed(1)}%
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                    <p className="text-white/80 text-base font-medium">
+                      taxa de cancelamento
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Data/Hora */}
+      <div className="absolute bottom-6 right-6 text-white/60 text-sm">
+        {new Date().toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
+      </div>
+    </div>
+  );
+};
+
+// --- CONFIGURAÇÕES DE META ---
+const MetaSettings = () => {
+  const [meta, setMeta] = useState('');
+  const [metas, setMetas] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, 'artifacts', appId, 'public', 'data', 'metas'),
+        orderBy('createdAt', 'desc')
+      ),
+      (snapshot) => {
+        setMetas(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      }
+    );
+    return unsubscribe;
+  }, []);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!meta) return;
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'metas'), {
+        valor: parseFloat(meta),
+        mes: new Date().getMonth(),
+        ano: new Date().getFullYear(),
+        createdAt: serverTimestamp(),
+      });
+      setMeta('');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar meta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm('Excluir meta?')) {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'metas', id));
+    }
+  };
+
+  const metaAtual = metas.find(
+    (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear()
+  );
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+        <div className="bg-orange-50 p-2 rounded-lg text-orange-600">
+          <Target size={24} />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-800">Metas Mensais</h2>
+          <p className="text-xs text-gray-400">Configure as metas de vendas</p>
+        </div>
+      </div>
+
+      {/* Meta Atual */}
+      {metaAtual && (
+        <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-6 rounded-xl text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold opacity-90">Meta deste mês</h3>
+              <div className="text-4xl font-bold mt-2">
+                {formatCurrency(metaAtual.valor)}
+              </div>
+            </div>
+            <Target size={64} className="opacity-20" />
+          </div>
+        </div>
+      )}
+
+      {/* Formulário */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-700 mb-4">Definir Meta</h3>
+        <form onSubmit={handleSave} className="flex gap-4">
+          <input
+            type="number"
+            step="0.01"
+            value={meta}
+            onChange={(e) => setMeta(e.target.value)}
+            className="flex-1 p-3 border rounded-lg text-lg"
+            placeholder="Valor da meta (R$)"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50"
+          >
+            {loading ? 'Salvando...' : 'Salvar Meta'}
+          </button>
+        </form>
+      </div>
+
+      {/* Histórico */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 p-4 border-b">
+          <h3 className="font-bold text-gray-700">Histórico de Metas</h3>
+        </div>
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="text-left p-4 font-bold text-gray-700">Mês/Ano</th>
+              <th className="text-right p-4 font-bold text-gray-700">Valor</th>
+              <th className="text-center p-4 font-bold text-gray-700">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {metas.map((m) => (
+              <tr key={m.id} className="border-b hover:bg-gray-50">
+                <td className="p-4">
+                  {getShortMonthName(m.mes)}/{m.ano}
+                </td>
+                <td className="p-4 text-right font-bold text-orange-600">
+                  {formatCurrency(m.valor)}
+                </td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => handleDelete(m.id)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -2347,6 +2926,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
+  const [metaMensal, setMetaMensal] = useState(0);
 
   useEffect(() => {
     return onAuthStateChanged(auth, setUser);
@@ -2388,12 +2968,29 @@ export default function App() {
       ),
       (s) => setUsuarios(s.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
+    
+    // Listener para meta mensal
+    const unsubM = onSnapshot(
+      query(
+        collection(db, 'artifacts', appId, 'public', 'data', 'metas'),
+        orderBy('createdAt', 'desc')
+      ),
+      (snapshot) => {
+        const metas = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const metaAtual = metas.find(
+          (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear()
+        );
+        setMetaMensal(metaAtual?.valor || 0);
+      }
+    );
+    
     return () => {
       unsubS();
       unsubP();
       unsubV();
       unsubL();
       unsubU();
+      unsubM();
     };
   }, [user]);
 
@@ -2791,6 +3388,225 @@ export default function App() {
     );
   };
 
+  // Componente de Importação CSV
+  const ImportCSV = () => {
+    const [file, setFile] = useState(null);
+    const [importing, setImporting] = useState(false);
+    const [result, setResult] = useState(null);
+
+    const handleFileChange = (e) => {
+      const selectedFile = e.target.files[0];
+      if (selectedFile && selectedFile.type === 'text/csv') {
+        setFile(selectedFile);
+        setResult(null);
+      } else {
+        alert('Por favor, selecione um arquivo CSV válido.');
+      }
+    };
+
+    const parseCSV = (text) => {
+      const lines = text.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      return lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = values[index] || '';
+        });
+        return obj;
+      });
+    };
+
+    const handleImport = async () => {
+      if (!file) return;
+
+      setImporting(true);
+      setResult(null);
+
+      try {
+        const text = await file.text();
+        const data = parseCSV(text);
+
+        let imported = 0;
+        let errors = 0;
+
+        for (const row of data) {
+          try {
+            // Mapear os campos do CSV para o formato do banco
+            const clientData = {
+              nome: row.nome || row.client || row.cliente || row.company || row.empresa || '',
+              cnpj: row.cnpj || row.document || '',
+              email: row.email || '',
+              telefone: row.telefone || row.phone || row.celular || '',
+              cpf: row.cpf || '',
+              endereco: row.endereco || row.address || '',
+              cidade: row.cidade || row.city || '',
+              estado: row.estado || row.state || row.uf || '',
+              cep: row.cep || row.zipcode || '',
+              produto: row.produto || row.product || 'Cliente Importado',
+              valor: 0, // Valor zero para não afetar estatísticas
+              vendedor: row.vendedor || row.seller || row.responsavel || 'Importação',
+              status: 'ativo',
+              createdAt: serverTimestamp(),
+            };
+
+            // Validar dados obrigatórios
+            if (!clientData.nome || !clientData.cnpj) {
+              errors++;
+              continue;
+            }
+
+            await addDoc(collection(db, 'sales'), clientData);
+            imported++;
+          } catch (err) {
+            console.error('Erro ao importar linha:', err);
+            errors++;
+          }
+        }
+
+        setResult({
+          success: true,
+          imported,
+          errors,
+          total: data.length,
+        });
+      } catch (err) {
+        console.error('Erro ao processar arquivo:', err);
+        setResult({
+          success: false,
+          message: 'Erro ao processar o arquivo CSV.',
+        });
+      } finally {
+        setImporting(false);
+        setFile(null);
+      }
+    };
+
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Upload size={28} className="text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-800">
+              Importar Clientes CSV
+            </h2>
+          </div>
+
+          {/* Instruções */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-bold text-blue-900 mb-2">📋 Formato do CSV:</h3>
+            <p className="text-sm text-blue-800 mb-2">
+              O arquivo deve conter as seguintes colunas (separadas por vírgula):
+            </p>
+            <code className="text-xs bg-white px-2 py-1 rounded block mb-2">
+              nome,cnpj,email,telefone,cpf,endereco,cidade,estado,cep,produto,vendedor
+            </code>
+            <p className="text-xs text-blue-700">
+              <strong>Obrigatórios:</strong> nome, cnpj <br />
+              <strong>Opcionais:</strong> todos os demais campos
+            </p>
+          </div>
+
+          {/* Área de upload */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="hidden"
+              id="csvFile"
+              disabled={importing}
+            />
+            <label
+              htmlFor="csvFile"
+              className="cursor-pointer flex flex-col items-center"
+            >
+              <Upload size={48} className="text-gray-400 mb-4" />
+              {file ? (
+                <div className="text-green-600 font-semibold">
+                  ✓ {file.name}
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-600 font-semibold mb-2">
+                    Clique para selecionar um arquivo CSV
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    ou arraste e solte aqui
+                  </p>
+                </>
+              )}
+            </label>
+          </div>
+
+          {/* Botão de importar */}
+          {file && (
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {importing ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Upload size={20} />
+                  Importar Clientes
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Resultado */}
+          {result && (
+            <div
+              className={`mt-6 p-4 rounded-lg ${
+                result.success
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}
+            >
+              {result.success ? (
+                <>
+                  <h3 className="font-bold text-green-900 mb-2">
+                    ✓ Importação Concluída
+                  </h3>
+                  <p className="text-green-800">
+                    <strong>{result.imported}</strong> clientes importados com sucesso
+                  </p>
+                  {result.errors > 0 && (
+                    <p className="text-orange-700 text-sm mt-1">
+                      {result.errors} registros com erro foram ignorados
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 className="font-bold text-red-900 mb-2">✗ Erro</h3>
+                  <p className="text-red-800">{result.message}</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Exemplo de CSV */}
+        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+          <h3 className="font-bold text-gray-800 mb-3">💡 Exemplo de arquivo CSV:</h3>
+          <pre className="bg-white p-4 rounded text-xs overflow-x-auto border">
+{`nome,cnpj,email,telefone,cpf,endereco,cidade,estado,cep,produto,vendedor
+Empresa ABC Ltda,12.345.678/0001-99,contato@empresa.com,11999999999,123.456.789-00,Rua A 123,São Paulo,SP,01234-567,Produto X,Maria
+Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-00,Av B 456,Rio de Janeiro,RJ,20000-000,Produto Y,João`}
+          </pre>
+        </div>
+      </div>
+    );
+  };
+
   const NavItem = ({ view, icon: Icon, label }) => (
     <button
       onClick={() => {
@@ -2812,6 +3628,17 @@ export default function App() {
     return <AuthScreen onLogin={setUser} />;
   }
 
+  // Se estiver na view de TV, renderizar fullscreen sem sidebar
+  if (currentView === 'tv-dashboard') {
+    return (
+      <TVDashboard
+        sales={sales}
+        metaMensal={metaMensal}
+        onBack={() => setCurrentView('dashboard')}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
@@ -2821,14 +3648,17 @@ export default function App() {
         </div>
         <nav className="flex-1 p-4 space-y-2">
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem view="tv-dashboard" icon={Tv} label="TV Dashboard" />
           <NavItem view="analytics" icon={Activity} label="Analytics" />
           <NavItem view="reports" icon={BarChart2} label="Relatórios" />
           <NavItem view="leads" icon={Users} label="Leads" />
           <NavItem view="new" icon={PlusCircle} label="Nova Venda" />
           <NavItem view="list" icon={FileText} label="Clientes" />
+          <NavItem view="import-csv" icon={Upload} label="Importar CSV" />
           <NavItem view="vendedores" icon={Users} label="Vendedores" />
           <NavItem view="products" icon={ShoppingBag} label="Produtos" />
           <NavItem view="usuarios" icon={Shield} label="Usuários" />
+          <NavItem view="metas" icon={Target} label="Metas" />
         </nav>
         <div className="p-4 border-t border-gray-100">
           <div className="flex items-center gap-3 mb-3">
@@ -2886,14 +3716,17 @@ export default function App() {
               icon={LayoutDashboard}
               label="Dashboard"
             />
+            <NavItem view="tv-dashboard" icon={Tv} label="TV Dashboard" />
             <NavItem view="analytics" icon={Activity} label="Analytics" />
             <NavItem view="reports" icon={BarChart2} label="Relatórios" />
             <NavItem view="leads" icon={Users} label="Leads" />
             <NavItem view="new" icon={PlusCircle} label="Nova Venda" />
             <NavItem view="list" icon={FileText} label="Clientes" />
+            <NavItem view="import-csv" icon={Upload} label="Importar CSV" />
             <NavItem view="vendedores" icon={Users} label="Vendedores" />
             <NavItem view="products" icon={ShoppingBag} label="Produtos" />
             <NavItem view="usuarios" icon={Shield} label="Usuários" />
+            <NavItem view="metas" icon={Target} label="Metas" />
             <div className="pt-4 border-t border-gray-200 mt-4">
               <button
                 onClick={handleLogout}
@@ -2937,6 +3770,8 @@ export default function App() {
               onDeleteProduct={handleDeleteProduct}
             />
           )}
+          {currentView === 'metas' && <MetaSettings />}
+          {currentView === 'import-csv' && <ImportCSV />}
           {currentView === 'new' && (
             <SalesForm
               onSave={handleAddSale}

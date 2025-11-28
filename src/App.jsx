@@ -678,16 +678,16 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
       </div>
 
       {/* Bento Grid Layout */}
-      <div className="h-full w-full p-8 pt-24">
-        <div className="grid grid-cols-12 grid-rows-12 gap-6 h-full">
+      <div className="h-full w-full p-6 pt-20">
+        <div className="grid grid-cols-12 grid-rows-12 gap-4 h-full">
           
           {/* Widget 1: Gráfico Total de Vendas de Todos os Meses */}
-          <div className="col-span-6 row-span-6 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
-            <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-3">
-              <BarChart2 size={24} className="text-blue-400" />
+          <div className="col-span-8 row-span-6 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
+            <h3 className="text-white text-lg font-bold mb-3 flex items-center gap-2">
+              <BarChart2 size={20} className="text-blue-400" />
               Vendas - Últimos 12 Meses
             </h3>
-            <div className="h-[calc(100%-60px)] flex items-end justify-between gap-1.5 px-2">
+            <div className="h-[calc(100%-50px)] flex items-end justify-between gap-1.5 px-2">
               {monthlyData.map((month, i) => {
                 const heightPercent = maxMonthly > 0 ? (month.total / maxMonthly) * 100 : 0;
                 const barHeight = month.total > 0 ? Math.max(heightPercent, 20) : 5;
@@ -696,7 +696,7 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
                   <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
                     {/* Label valor */}
                     {month.total > 0 && (
-                      <div className="text-white text-[10px] font-bold whitespace-nowrap bg-gradient-to-r from-blue-500/80 to-cyan-500/80 px-2 py-1 rounded-full shadow-lg">
+                      <div className="text-white text-[9px] font-bold whitespace-nowrap bg-gradient-to-r from-blue-500/80 to-cyan-500/80 px-1.5 py-0.5 rounded-full shadow-lg">
                         {month.total >= 1000 ? `${(month.total / 1000).toFixed(1)}k` : month.total.toFixed(0)}
                       </div>
                     )}
@@ -711,20 +711,20 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
                       
                       {/* Contagem dentro da barra */}
                       {month.count > 0 && barHeight > 30 && (
-                        <div className="absolute top-2 inset-x-0 text-center text-white text-[9px] font-bold drop-shadow-md">
+                        <div className="absolute top-2 inset-x-0 text-center text-white text-[8px] font-bold drop-shadow-md">
                           {month.count}
                         </div>
                       )}
                       
                       {/* Tooltip hover */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
                         {formatCurrency(month.total)}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
                       </div>
                     </div>
                     
                     {/* Label mês */}
-                    <div className="text-white/90 text-[11px] font-semibold mt-1">
+                    <div className="text-white/90 text-[10px] font-semibold mt-1">
                       {month.month}
                     </div>
                   </div>
@@ -734,57 +734,57 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
           </div>
 
           {/* Widget 2: Carrossel Mês/Semana/Dia */}
-          <div className="col-span-6 row-span-6 bg-gradient-to-br from-slate-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl relative">
+          <div className="col-span-4 row-span-6 bg-gradient-to-br from-slate-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl relative">
             {/* Indicadores do carrossel */}
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <div className="absolute top-4 right-4 flex gap-1.5 z-10">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className={`h-2 rounded-full transition-all ${
-                    i === carouselIndex ? 'bg-gradient-to-r from-blue-400 to-cyan-400 w-8 shadow-lg' : 'bg-white/30 w-2'
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === carouselIndex ? 'bg-gradient-to-r from-blue-400 to-cyan-400 w-6 shadow-lg' : 'bg-white/30 w-1.5'
                   }`}
                 />
               ))}
             </div>
             
-            <h3 className="text-white text-xl font-bold mb-4 flex items-center gap-3">
-              <Activity size={24} className="text-cyan-400" />
+            <h3 className="text-white text-lg font-bold mb-3 flex items-center gap-2">
+              <Activity size={20} className="text-cyan-400" />
               {currentCarousel.title}
             </h3>
             
-            <div className="h-[calc(100%-60px)]">
+            <div className="h-[calc(100%-50px)]">
               {carouselIndex === 2 ? (
                 /* Visualização "Hoje" */
                 <div className="flex flex-col items-center justify-center h-full">
-                  <div className="text-white text-7xl font-bold mb-4 drop-shadow-2xl">
+                  <div className="text-white text-5xl font-bold mb-3 drop-shadow-2xl">
                     {formatCurrency(totalDay)}
                   </div>
-                  <div className="text-white text-2xl font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-6 py-3 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
+                  <div className="text-white text-base font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
                     {salesToday.length} {salesToday.length === 1 ? 'venda' : 'vendas'}
                   </div>
                 </div>
               ) : carouselIndex === 0 ? (
                 /* Visualização "Vendas do Mês" - Valor Grande */
                 <div className="flex flex-col items-center justify-center h-full">
-                  <div className="text-white text-7xl font-bold mb-4 drop-shadow-2xl">
+                  <div className="text-white text-5xl font-bold mb-3 drop-shadow-2xl">
                     {formatCurrency(totalMonth)}
                   </div>
-                  <div className="text-white text-2xl font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-6 py-3 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
+                  <div className="text-white text-base font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
                     {salesInMonth.length} {salesInMonth.length === 1 ? 'venda no mês' : 'vendas no mês'}
                   </div>
                 </div>
               ) : (
                 /* Gráfico de barras - Apenas para "Vendas da Semana" */
-                <div className="h-full flex items-end justify-between gap-1.5 px-2">
+                <div className="h-full flex items-end justify-between gap-1 px-1">
                   {currentCarousel.data.map((item, i) => {
                     const heightPercent = currentCarousel.max > 0 ? (item.total / currentCarousel.max) * 100 : 0;
                     const barHeight = item.total > 0 ? Math.max(heightPercent, 20) : 5;
                     
                     return (
-                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
+                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
                         {/* Label valor */}
                         {item.total > 0 && (
-                          <div className="text-white text-[10px] font-bold whitespace-nowrap bg-gradient-to-r from-cyan-500/80 to-blue-500/80 px-2 py-1 rounded-full shadow-lg">
+                          <div className="text-white text-[8px] font-bold whitespace-nowrap bg-gradient-to-r from-cyan-500/80 to-blue-500/80 px-1.5 py-0.5 rounded-full shadow-lg">
                             {item.total >= 1000 ? `${(item.total / 1000).toFixed(1)}k` : item.total.toFixed(0)}
                           </div>
                         )}
@@ -799,25 +799,25 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
                           
                           {/* Contagem dentro da barra */}
                           {item.count > 0 && barHeight > 30 && (
-                            <div className="absolute top-2 inset-x-0 text-center text-white text-[9px] font-bold drop-shadow-md">
+                            <div className="absolute top-2 inset-x-0 text-center text-white text-[8px] font-bold drop-shadow-md">
                               {item.count}
                             </div>
                           )}
                           
                           {/* Tooltip hover */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
                             {formatCurrency(item.total)}
                             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
                           </div>
                         </div>
                         
                         {/* Label */}
-                        <div className="text-center mt-1">
-                          <div className="text-white/90 text-[11px] font-semibold">
+                        <div className="text-center mt-0.5">
+                          <div className="text-white/90 text-[9px] font-semibold">
                             {item.month || item.day || item.label}
                           </div>
                           {item.date && (
-                            <div className="text-white/60 text-[9px]">{item.date}</div>
+                            <div className="text-white/60 text-[8px]">{item.date}</div>
                           )}
                         </div>
                       </div>
@@ -829,71 +829,71 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
           </div>
 
           {/* Widget 3: Ticket Médio */}
-          <div className="col-span-4 row-span-6 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+          <div className="col-span-3 row-span-6 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
             
             <div className="relative z-10 flex flex-col items-center">
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-4 rounded-2xl shadow-lg shadow-emerald-500/30 mb-4">
-                <DollarSign size={48} className="text-white" />
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-2xl shadow-lg shadow-emerald-500/30 mb-3">
+                <DollarSign size={32} className="text-white" />
               </div>
-              <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+              <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
                 Ticket Médio
               </h3>
-              <div className="text-white text-6xl font-bold mb-2 drop-shadow-lg">
+              <div className="text-white text-4xl font-bold mb-2 drop-shadow-lg">
                 {formatCurrency(ticketMedio)}
               </div>
-              <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                <p className="text-white/80 text-base font-medium">
-                  {salesInMonth.length} vendas no mês
+              <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                <p className="text-white/80 text-xs font-medium">
+                  {salesInMonth.length} vendas
                 </p>
               </div>
             </div>
           </div>
 
           {/* Widget 4: Falta para Meta */}
-          <div className="col-span-4 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+          <div className="col-span-6 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
             
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-3 rounded-xl shadow-lg shadow-orange-500/30">
-                  <Target size={36} className="text-white" />
+              <div className="flex items-center gap-2 mb-4">
+                <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-2.5 rounded-xl shadow-lg shadow-orange-500/30">
+                  <Target size={28} className="text-white" />
                 </div>
-                <h3 className="text-white text-xl font-bold">Meta do Mês</h3>
+                <h3 className="text-white text-lg font-bold">Meta do Mês</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <div className="flex justify-between text-white/90 text-sm mb-2">
+                  <div className="flex justify-between text-white/90 text-sm mb-1.5">
                     <span>Realizado</span>
                     <span className="font-bold">{progressoMeta.toFixed(1)}%</span>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden border border-white/20">
+                  <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden border border-white/20">
                     <div
                       className="bg-gradient-to-r from-orange-400 to-amber-400 h-full rounded-full transition-all duration-500 shadow-lg"
                       style={{ width: `${Math.min(progressoMeta, 100)}%` }}
                     />
                   </div>
                 </div>
-                <div className="text-white text-5xl font-bold drop-shadow-lg">
+                <div className="text-white text-3xl font-bold drop-shadow-lg">
                   {formatCurrency(totalMonth)}
                 </div>
-                <div className="text-white/70 text-lg font-medium">
+                <div className="text-white/70 text-base font-medium">
                   de {formatCurrency(metaMensal)}
                 </div>
                 {metaMensal === 0 ? (
-                  <div className="text-orange-300 text-lg font-semibold flex items-center gap-2 bg-orange-500/10 px-4 py-3 rounded-lg border border-orange-500/20">
-                    <Target size={20} />
+                  <div className="text-orange-300 text-sm font-semibold flex items-center gap-2 bg-orange-500/10 px-3 py-2 rounded-lg border border-orange-500/20">
+                    <Target size={16} />
                     Configure uma meta na aba "Metas"
                   </div>
                 ) : metaBatida ? (
-                  <div className="text-green-300 text-xl font-semibold flex items-center gap-2 bg-green-500/20 px-4 py-3 rounded-lg border border-green-500/30">
-                    <CheckCircle size={24} />
+                  <div className="text-green-300 text-base font-semibold flex items-center gap-2 bg-green-500/20 px-3 py-2 rounded-lg border border-green-500/30">
+                    <CheckCircle size={20} />
                     Meta Batida! 🎉
                   </div>
                 ) : (
-                  <div className="text-yellow-300 text-xl font-semibold bg-yellow-500/10 px-4 py-3 rounded-lg border border-yellow-500/20">
+                  <div className="text-yellow-300 text-base font-semibold bg-yellow-500/10 px-3 py-2 rounded-lg border border-yellow-500/20">
                     Faltam {formatCurrency(faltaMeta)}
                   </div>
                 )}
@@ -902,39 +902,39 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
           </div>
 
           {/* Widget 5: Cancelamentos (Carrossel) */}
-          <div className="col-span-4 row-span-6 bg-gradient-to-br from-red-900/40 to-rose-900/40 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+          <div className="col-span-3 row-span-6 bg-gradient-to-br from-red-900/40 to-rose-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent"></div>
             
             <div className="relative z-10 flex flex-col items-center">
-              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-4 rounded-2xl shadow-lg shadow-red-500/30 mb-4">
-                <XCircle size={48} className="text-white" />
+              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-3 rounded-2xl shadow-lg shadow-red-500/30 mb-3">
+                <XCircle size={32} className="text-white" />
               </div>
               
               {canceladosIndex === 0 ? (
                 <>
-                  <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+                  <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
                     Cancelamentos
                   </h3>
-                  <div className="text-white text-7xl font-bold mb-2 drop-shadow-lg">
+                  <div className="text-white text-5xl font-bold mb-2 drop-shadow-lg">
                     {cancelados}
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                    <p className="text-white/80 text-base font-medium">
-                      no mês de {getMonthName(selectedDate).split(' ')[0]}
+                  <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                    <p className="text-white/80 text-xs font-medium">
+                      no mês atual
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <h3 className="text-white/90 text-xl font-semibold mb-3 text-center">
+                  <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
                     Turn Over
                   </h3>
-                  <div className="text-white text-7xl font-bold mb-2 drop-shadow-lg">
+                  <div className="text-white text-5xl font-bold mb-2 drop-shadow-lg">
                     {turnOverRate.toFixed(1)}%
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                    <p className="text-white/80 text-base font-medium">
+                  <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                    <p className="text-white/80 text-xs font-medium">
                       taxa de cancelamento
                     </p>
                   </div>

@@ -2923,16 +2923,18 @@ export default function App() {
   const [leads, setLeads] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('tv-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
   const [metaMensal, setMetaMensal] = useState(0);
 
+  // Carrega dados sem autenticação
   useEffect(() => {
-    return onAuthStateChanged(auth, setUser);
+    // Simula usuário autenticado para manter compatibilidade
+    setUser({ email: 'tv@dashboard.com', displayName: 'TV Dashboard' });
   }, []);
   useEffect(() => {
-    if (!user) return;
+    // Remove autenticação - carrega dados diretamente
     const unsubS = onSnapshot(
       query(
         collection(db, 'artifacts', appId, 'public', 'data', 'sales'),
@@ -2992,7 +2994,7 @@ export default function App() {
       unsubU();
       unsubM();
     };
-  }, [user]);
+  }, []);
 
   const handleAddSale = async (data) => {
     if (!user) return;
@@ -3624,11 +3626,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
     </button>
   );
 
-  if (!user) {
-    return <AuthScreen onLogin={setUser} />;
-  }
-
-  // Se estiver na view de TV, renderizar fullscreen sem sidebar
+  // Renderizar TV Dashboard fullscreen sem login
   if (currentView === 'tv-dashboard') {
     return (
       <TVDashboard

@@ -2923,6 +2923,7 @@ export default function App() {
   const [leads, setLeads] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [currentView, setCurrentView] = useState('tv-dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
@@ -2940,7 +2941,10 @@ export default function App() {
         collection(db, 'artifacts', appId, 'public', 'data', 'sales'),
         orderBy('createdAt', 'desc')
       ),
-      (s) => setSales(s.docs.map((d) => ({ id: d.id, ...d.data() })))
+      (s) => {
+        setSales(s.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setInitialLoading(false);
+      }
     );
     const unsubP = onSnapshot(
       query(
@@ -3625,6 +3629,19 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
       <Icon size={20} /> <span className="font-medium">{label}</span>{' '}
     </button>
   );
+
+  // Tela de carregamento inicial
+  if (initialLoading) {
+    return (
+      <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mb-4"></div>
+          <div className="text-white text-2xl font-bold">Carregando dados...</div>
+          <div className="text-white/60 text-sm mt-2">Aguarde um momento</div>
+        </div>
+      </div>
+    );
+  }
 
   // Renderizar TV Dashboard fullscreen sem login
   if (currentView === 'tv-dashboard') {

@@ -3001,12 +3001,11 @@ export default function App() {
   }, []);
 
   const handleAddSale = async (data) => {
-    if (!user) return;
     setLoading(true);
     try {
       await addDoc(
         collection(db, 'artifacts', appId, 'public', 'data', 'sales'),
-        { ...data, createdAt: serverTimestamp(), createdBy: user.uid }
+        { ...data, createdAt: serverTimestamp() }
       );
       
       // Se veio de um lead, marcar como convertido

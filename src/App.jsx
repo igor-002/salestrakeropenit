@@ -385,7 +385,7 @@ const AuthScreen = ({ onLogin }) => {
 
 // --- COMPONENTES VISUAIS ---
 
-const StatCard = ({ title, value, icon: Icon, colorClass, subtext, trend }) => (
+const StatCard = ({ title, value, icon: Icon, colorClass, subtext, trend, onEdit, editable }) => (
   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start space-x-4 transition hover:shadow-md hover:border-blue-100">
     <div className={`p-3 rounded-full ${colorClass} mt-1`}>
       <Icon className="w-6 h-6" />
@@ -406,8 +406,117 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtext, trend }) => (
         </div>
       )}
     </div>
+    {editable && onEdit && (
+      <button
+        onClick={onEdit}
+        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+        title="Ajustar valor"
+      >
+        <Edit2 size={18} />
+      </button>
+    )}
   </div>
 );
+
+// Modal para ajustar faturamento
+const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) => {
+  const [ajuste, setAjuste] = useState(ajusteAtual || 0);
+  const [motivo, setMotivo] = useState('');
+
+  const handleSave = () => {
+    onSave(ajuste, motivo);
+    onClose();
+  };
+
+  const valorFinal = valorAtual + ajuste;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <DollarSign size={24} />
+            Ajustar Faturamento
+          </h3>
+          <p className="text-emerald-100 text-sm mt-1">
+            Adicione ou subtraia valores do faturamento total
+          </p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Valor Original
+            </label>
+            <div className="text-2xl font-bold text-gray-800">
+              {formatCurrency(valorAtual)}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ajuste (use valores negativos para diminuir)
+            </label>
+            <input
+              type="number"
+              value={ajuste}
+              onChange={(e) => setAjuste(parseFloat(e.target.value) || 0)}
+              step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="Ex: -500.00"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Motivo do Ajuste (opcional)
+            </label>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              rows="3"
+              placeholder="Descreva o motivo do ajuste..."
+            />
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Valor Final:</span>
+              <span className={`text-2xl font-bold ${valorFinal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {formatCurrency(valorFinal)}
+              </span>
+            </div>
+            {ajuste !== 0 && (
+              <div className="mt-2 text-xs text-gray-500">
+                {ajuste > 0 ? '+ ' : ''}{formatCurrency(ajuste)}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="bg-gray-50 p-4 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          >
+            Salvar Ajuste
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ClientCardModal = ({ client, onClose, onSaveClient }) => {
   const [obs, setObs] = useState(client.observacoes || '');
@@ -1101,6 +1210,9 @@ const MetaSettings = () => {
 // --- DASHBOARD PADRÃO ---
 const Dashboard = ({ sales, leads }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [ajusteFaturamento, setAjusteFaturamento] = useState(0);
+  const [motivoAjuste, setMotivoAjuste] = useState('');
+  const [showAjusteModal, setShowAjusteModal] = useState(false);
 
   const isSameMonth = (d) => {
     if (!d) return false;
@@ -1118,14 +1230,20 @@ const Dashboard = ({ sales, leads }) => {
     ? ((convertedLeads / leadsInMonth.length) * 100).toFixed(1) 
     : 0;
 
-  const totalVendas = salesInMonth.reduce(
+  const totalVendasOriginal = salesInMonth.reduce(
     (acc, curr) => acc + (curr.valor || 0),
     0
   );
+  const totalVendas = totalVendasOriginal + ajusteFaturamento;
   const totalComissao = salesInMonth.reduce(
     (acc, curr) => acc + (curr.comissaoValor || 0),
     0
   );
+
+  const handleSaveAjuste = (novoAjuste, novoMotivo) => {
+    setAjusteFaturamento(novoAjuste);
+    setMotivoAjuste(novoMotivo);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -1182,6 +1300,9 @@ const Dashboard = ({ sales, leads }) => {
           value={formatCurrency(totalVendas)}
           icon={DollarSign}
           colorClass="bg-emerald-100 text-emerald-600"
+          subtext={ajusteFaturamento !== 0 ? `Ajuste: ${formatCurrency(ajusteFaturamento)}` : `${salesInMonth.length} vendas`}
+          editable={true}
+          onEdit={() => setShowAjusteModal(true)}
         />
         <StatCard
           title="Comissões"
@@ -1190,6 +1311,14 @@ const Dashboard = ({ sales, leads }) => {
           colorClass="bg-rose-100 text-rose-600"
         />
       </div>
+      {showAjusteModal && (
+        <AjusteFaturamentoModal
+          onClose={() => setShowAjusteModal(false)}
+          onSave={handleSaveAjuste}
+          valorAtual={totalVendasOriginal}
+          ajusteAtual={ajusteFaturamento}
+        />
+      )}
     </div>
   );
 };

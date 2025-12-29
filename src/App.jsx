@@ -635,10 +635,11 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
 };
 
 // --- TV DASHBOARD (FULL SCREEN BENTO BOX 1920x1080) ---
-const TVDashboard = ({ sales, metaMensal, onBack }) => {
+const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjuste }) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [canceladosIndex, setCanceladosIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showAjusteModal, setShowAjusteModal] = useState(false);
 
   // Alternar carrossel principal a cada 5 segundos
   useEffect(() => {
@@ -693,7 +694,8 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
   const salesInWeek = sales.filter((s) => isSameWeek(s.createdAt));
   const salesToday = sales.filter((s) => isToday(s.createdAt));
 
-  const totalMonth = salesInMonth.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalMonthOriginal = salesInMonth.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalMonth = totalMonthOriginal + ajusteFaturamento;
   const totalWeek = salesInWeek.reduce((acc, s) => acc + (s.valor || 0), 0);
   const totalDay = salesToday.reduce((acc, s) => acc + (s.valor || 0), 0);
 
@@ -874,13 +876,27 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
                 </div>
               ) : carouselIndex === 0 ? (
                 /* Visualização "Vendas do Mês" - Valor Grande */
-                <div className="flex flex-col items-center justify-center h-full">
+                <div className="flex flex-col items-center justify-center h-full relative">
+                  {/* Botão de edição */}
+                  <button
+                    onClick={() => setShowAjusteModal(true)}
+                    className="absolute top-2 right-2 p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition group"
+                    title="Ajustar faturamento"
+                  >
+                    <Edit2 size={16} className="text-white group-hover:text-emerald-300" />
+                  </button>
+                  
                   <div className="text-white text-5xl font-bold mb-3 drop-shadow-2xl">
                     {formatCurrency(totalMonth)}
                   </div>
                   <div className="text-white text-base font-semibold bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-xl">
                     {salesInMonth.length} {salesInMonth.length === 1 ? 'venda no mês' : 'vendas no mês'}
                   </div>
+                  {ajusteFaturamento !== 0 && (
+                    <div className="mt-2 text-xs text-cyan-300 font-semibold">
+                      Ajuste: {formatCurrency(ajusteFaturamento)}
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Gráfico de barras - Apenas para "Vendas da Semana" */
@@ -1065,6 +1081,16 @@ const TVDashboard = ({ sales, metaMensal, onBack }) => {
           minute: '2-digit',
         })}
       </div>
+
+      {/* Modal de Ajuste */}
+      {showAjusteModal && (
+        <AjusteFaturamentoModal
+          onClose={() => setShowAjusteModal(false)}
+          onSave={onSaveAjuste}
+          valorAtual={totalMonthOriginal}
+          ajusteAtual={ajusteFaturamento}
+        />
+      )}
     </div>
   );
 };
@@ -1208,10 +1234,8 @@ const MetaSettings = () => {
 };
 
 // --- DASHBOARD PADRÃO ---
-const Dashboard = ({ sales, leads }) => {
+const Dashboard = ({ sales, leads, ajusteFaturamento, onSaveAjuste }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [ajusteFaturamento, setAjusteFaturamento] = useState(0);
-  const [motivoAjuste, setMotivoAjuste] = useState('');
   const [showAjusteModal, setShowAjusteModal] = useState(false);
 
   const isSameMonth = (d) => {
@@ -1239,11 +1263,6 @@ const Dashboard = ({ sales, leads }) => {
     (acc, curr) => acc + (curr.comissaoValor || 0),
     0
   );
-
-  const handleSaveAjuste = (novoAjuste, novoMotivo) => {
-    setAjusteFaturamento(novoAjuste);
-    setMotivoAjuste(novoMotivo);
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -1314,7 +1333,7 @@ const Dashboard = ({ sales, leads }) => {
       {showAjusteModal && (
         <AjusteFaturamentoModal
           onClose={() => setShowAjusteModal(false)}
-          onSave={handleSaveAjuste}
+          onSave={onSaveAjuste}
           valorAtual={totalVendasOriginal}
           ajusteAtual={ajusteFaturamento}
         />
@@ -3057,6 +3076,8 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
   const [metaMensal, setMetaMensal] = useState(0);
+  const [ajusteFaturamento, setAjusteFaturamento] = useState(0);
+  const [motivoAjuste, setMotivoAjuste] = useState('');
 
   // Carrega dados sem autenticação
   useEffect(() => {
@@ -3778,6 +3799,11 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
         sales={sales}
         metaMensal={metaMensal}
         onBack={() => setCurrentView('dashboard')}
+        ajusteFaturamento={ajusteFaturamento}
+        onSaveAjuste={(novoAjuste, novoMotivo) => {
+          setAjusteFaturamento(novoAjuste);
+          setMotivoAjuste(novoMotivo);
+        }}
       />
     );
   }
@@ -3883,7 +3909,17 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
       )}
       <main className="flex-1 overflow-auto p-4 md:p-8 pt-20 md:pt-8 relative bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          {currentView === 'dashboard' && <Dashboard sales={sales} leads={leads} />}
+          {currentView === 'dashboard' && (
+            <Dashboard 
+              sales={sales} 
+              leads={leads}
+              ajusteFaturamento={ajusteFaturamento}
+              onSaveAjuste={(novoAjuste, novoMotivo) => {
+                setAjusteFaturamento(novoAjuste);
+                setMotivoAjuste(novoMotivo);
+              }}
+            />
+          )}
           {currentView === 'analytics' && <AnalyticsView sales={sales} />}
           {currentView === 'reports' && (
             <ReportsView sales={sales} vendedores={vendedores} />

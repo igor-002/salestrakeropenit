@@ -3140,6 +3140,24 @@ export default function App() {
       }
     );
     
+    // Listener para ajustes de faturamento
+    const unsubA = onSnapshot(
+      query(
+        collection(db, 'artifacts', appId, 'public', 'data', 'ajustes'),
+        orderBy('createdAt', 'desc')
+      ),
+      (snapshot) => {
+        const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const ajusteAtual = ajustes.find(
+          (a) => a.mes === new Date().getMonth() && a.ano === new Date().getFullYear()
+        );
+        if (ajusteAtual) {
+          setAjusteFaturamento(ajusteAtual.valor || 0);
+          setMotivoAjuste(ajusteAtual.motivo || '');
+        }
+      }
+    );
+    
     return () => {
       unsubS();
       unsubP();
@@ -3147,6 +3165,7 @@ export default function App() {
       unsubL();
       unsubU();
       unsubM();
+      unsubA();
     };
   }, []);
 
@@ -3242,6 +3261,56 @@ export default function App() {
   const handleConvertLead = (lead) => {
     setLeadToConvert(lead);
     setCurrentView('new');
+  };
+
+  const handleSaveAjusteFaturamento = async (novoAjuste, novoMotivo) => {
+    try {
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      
+      // Buscar se já existe um ajuste para este mês/ano
+      const ajustesRef = collection(db, 'artifacts', appId, 'public', 'data', 'ajustes');
+      const q = query(ajustesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await new Promise((resolve) => {
+        const unsubscribe = onSnapshot(q, (snap) => {
+          unsubscribe();
+          resolve(snap);
+        });
+      });
+      
+      const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const ajusteExistente = ajustes.find(
+        (a) => a.mes === mesAtual && a.ano === anoAtual
+      );
+      
+      const ajusteData = {
+        valor: novoAjuste,
+        motivo: novoMotivo,
+        mes: mesAtual,
+        ano: anoAtual,
+        updatedAt: serverTimestamp(),
+      };
+      
+      if (ajusteExistente) {
+        // Atualizar existente
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'public', 'data', 'ajustes', ajusteExistente.id),
+          ajusteData
+        );
+      } else {
+        // Criar novo
+        await addDoc(ajustesRef, {
+          ...ajusteData,
+          createdAt: serverTimestamp(),
+        });
+      }
+      
+      setAjusteFaturamento(novoAjuste);
+      setMotivoAjuste(novoMotivo);
+    } catch (error) {
+      console.error('Erro ao salvar ajuste:', error);
+      alert('Erro ao salvar ajuste. Tente novamente.');
+    }
   };
 
   const handleLogout = async () => {
@@ -3800,10 +3869,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
         metaMensal={metaMensal}
         onBack={() => setCurrentView('dashboard')}
         ajusteFaturamento={ajusteFaturamento}
-        onSaveAjuste={(novoAjuste, novoMotivo) => {
-          setAjusteFaturamento(novoAjuste);
-          setMotivoAjuste(novoMotivo);
-        }}
+        onSaveAjuste={handleSaveAjusteFaturamento}
       />
     );
   }
@@ -3914,10 +3980,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
               sales={sales} 
               leads={leads}
               ajusteFaturamento={ajusteFaturamento}
-              onSaveAjuste={(novoAjuste, novoMotivo) => {
-                setAjusteFaturamento(novoAjuste);
-                setMotivoAjuste(novoMotivo);
-              }}
+              onSaveAjuste={handleSaveAjusteFaturamento}
             />
           )}
           {currentView === 'analytics' && <AnalyticsView sales={sales} />}

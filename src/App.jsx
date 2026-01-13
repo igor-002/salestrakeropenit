@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  isWithinInterval,
+  isSameDay,
+  isSameMonth as isSameMonthFn,
+  parseISO,
+} from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
   LayoutDashboard,
   PlusCircle,
   Users,
@@ -718,50 +729,44 @@ const TVDashboard = ({ sales, metaMensal, metaSemanal, onBack, ajusteFaturamento
     return () => clearInterval(interval);
   }, []);
 
+  // Usando date-fns para cálculos precisos de datas
+  // A semana começa na Segunda-feira (padrão brasileiro)
+  const toDate = (d) => {
+    if (!d) return null;
+    return d.toDate ? d.toDate() : new Date(d);
+  };
+
   const isSameMonth = (d) => {
-    if (!d) return false;
-    const date = d.toDate ? d.toDate() : new Date(d);
-    return (
-      date.getMonth() === selectedDate.getMonth() &&
-      date.getFullYear() === selectedDate.getFullYear()
-    );
+    const date = toDate(d);
+    if (!date) return false;
+    return isSameMonthFn(date, selectedDate);
   };
 
   const isSameWeek = (d) => {
-    if (!d) return false;
-    const date = d.toDate ? d.toDate() : new Date(d);
+    const date = toDate(d);
+    if (!date) return false;
     const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-    return date >= startOfWeek && date <= endOfWeek;
+    // weekStartsOn: 1 = Segunda-feira (padrão brasileiro)
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    return isWithinInterval(date, { start: weekStart, end: weekEnd });
   };
 
   const isToday = (d) => {
-    if (!d) return false;
-    const date = d.toDate ? d.toDate() : new Date(d);
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
+    const date = toDate(d);
+    if (!date) return false;
+    return isSameDay(date, new Date());
   };
 
   const salesInMonth = sales.filter((s) => isSameMonth(s.createdAt));
   const salesInWeek = sales.filter((s) => isSameWeek(s.createdAt));
   const salesToday = sales.filter((s) => isToday(s.createdAt));
 
-  // Debug: Log das vendas do mês
+  // Debug: Log das vendas
   console.log('TVDashboard - Total vendas:', sales.length);
   console.log('TVDashboard - Vendas do mês:', salesInMonth.length);
-  console.log('TVDashboard - selectedDate:', selectedDate);
-  if (salesInMonth.length > 0) {
-    console.log('TVDashboard - Primeira venda do mês:', salesInMonth[0]);
-  }
+  console.log('TVDashboard - Vendas da semana:', salesInWeek.length);
+  console.log('TVDashboard - Semana:', startOfWeek(new Date(), { weekStartsOn: 1 }), 'a', endOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const totalMonthOriginal = salesInMonth.reduce((acc, s) => acc + (s.valor || 0), 0);
   const totalMonth = totalMonthOriginal + ajusteFaturamento;
@@ -1537,13 +1542,15 @@ const Dashboard = ({ sales, ajusteFaturamento, onSaveAjuste }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAjusteModal, setShowAjusteModal] = useState(false);
 
+  const toDate = (d) => {
+    if (!d) return null;
+    return d.toDate ? d.toDate() : new Date(d);
+  };
+
   const isSameMonth = (d) => {
-    if (!d) return false;
-    const date = d.toDate ? d.toDate() : new Date(d);
-    return (
-      date.getMonth() === selectedDate.getMonth() &&
-      date.getFullYear() === selectedDate.getFullYear()
-    );
+    const date = toDate(d);
+    if (!date) return false;
+    return isSameMonthFn(date, selectedDate);
   };
 
   const salesInMonth = sales.filter((s) => isSameMonth(s.createdAt));

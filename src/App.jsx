@@ -419,7 +419,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtext, trend, onEdit
 );
 
 // Modal para ajustar faturamento
-const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) => {
+const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual, titulo = "Ajustar Faturamento", subtitulo = "Adicione ou subtraia valores do faturamento total", cor = "emerald" }) => {
   const [ajuste, setAjuste] = useState(ajusteAtual || 0);
   const [motivo, setMotivo] = useState('');
 
@@ -429,6 +429,33 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
   };
 
   const valorFinal = valorAtual + ajuste;
+  
+  // Mapear cores
+  const corConfig = {
+    emerald: {
+      header: 'from-emerald-500 to-emerald-600',
+      textLight: 'text-emerald-100',
+      ring: 'focus:ring-emerald-500',
+      button: 'bg-emerald-600 hover:bg-emerald-700',
+      textDark: 'text-emerald-600'
+    },
+    purple: {
+      header: 'from-purple-500 to-purple-600',
+      textLight: 'text-purple-100',
+      ring: 'focus:ring-purple-500',
+      button: 'bg-purple-600 hover:bg-purple-700',
+      textDark: 'text-purple-600'
+    },
+    sky: {
+      header: 'from-sky-500 to-sky-600',
+      textLight: 'text-sky-100',
+      ring: 'focus:ring-sky-500',
+      button: 'bg-sky-600 hover:bg-sky-700',
+      textDark: 'text-sky-600'
+    }
+  };
+  
+  const cores = corConfig[cor] || corConfig.emerald;
 
   return (
     <div
@@ -439,13 +466,13 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
         className="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6">
+        <div className={`bg-gradient-to-r ${cores.header} text-white p-6`}>
           <h3 className="text-xl font-bold flex items-center gap-2">
             <DollarSign size={24} />
-            Ajustar Faturamento
+            {titulo}
           </h3>
-          <p className="text-emerald-100 text-sm mt-1">
-            Adicione ou subtraia valores do faturamento total
+          <p className={`${cores.textLight} text-sm mt-1`}>
+            {subtitulo}
           </p>
         </div>
         <div className="p-6 space-y-4">
@@ -467,7 +494,7 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
               value={ajuste}
               onChange={(e) => setAjuste(parseFloat(e.target.value) || 0)}
               step="0.01"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 ${cores.ring} focus:border-transparent`}
               placeholder="Ex: -500.00"
             />
           </div>
@@ -479,7 +506,7 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
             <textarea
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 ${cores.ring} focus:border-transparent`}
               rows="3"
               placeholder="Descreva o motivo do ajuste..."
             />
@@ -488,7 +515,7 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">Valor Final:</span>
-              <span className={`text-2xl font-bold ${valorFinal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              <span className={`text-2xl font-bold ${valorFinal >= 0 ? cores.textDark : 'text-red-600'}`}>
                 {formatCurrency(valorFinal)}
               </span>
             </div>
@@ -508,7 +535,7 @@ const AjusteFaturamentoModal = ({ onClose, onSave, valorAtual, ajusteAtual }) =>
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className={`px-4 py-2 ${cores.button} text-white rounded-lg transition`}
           >
             Salvar Ajuste
           </button>
@@ -635,11 +662,14 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
 };
 
 // --- TV DASHBOARD (FULL SCREEN BENTO BOX 1920x1080) ---
-const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjuste }) => {
+const TVDashboard = ({ sales, metaMensal, metaSemanal, onBack, ajusteFaturamento, onSaveAjuste, ajusteMRR = 0, ajusteUnicas = 0, onSaveAjusteMRR, onSaveAjusteUnicas }) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [canceladosIndex, setCanceladosIndex] = useState(0);
+  const [metaIndex, setMetaIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAjusteModal, setShowAjusteModal] = useState(false);
+  const [showAjusteMRRModal, setShowAjusteMRRModal] = useState(false);
+  const [showAjusteUnicasModal, setShowAjusteUnicasModal] = useState(false);
 
   // Alternar carrossel principal a cada 5 segundos
   useEffect(() => {
@@ -654,6 +684,14 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
     const interval = setInterval(() => {
       setCanceladosIndex((prev) => (prev + 1) % 2); // 0=Número, 1=Turn Over %
     }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Alternar carrossel de metas a cada 6 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetaIndex((prev) => (prev + 1) % 2); // 0=Mês, 1=Semana
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -699,20 +737,44 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
   const totalWeek = salesInWeek.reduce((acc, s) => acc + (s.valor || 0), 0);
   const totalDay = salesToday.reduce((acc, s) => acc + (s.valor || 0), 0);
 
+  // Separar vendas recorrentes e únicas (mensal)
+  const vendasRecorrentes = salesInMonth.filter(s => s.recorrente);
+  const vendasUnicas = salesInMonth.filter(s => !s.recorrente);
+  const totalRecorrenteOriginal = vendasRecorrentes.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalUnicoOriginal = vendasUnicas.reduce((acc, s) => acc + (s.valor || 0), 0);
+  const totalRecorrente = totalRecorrenteOriginal + ajusteMRR;
+  const totalUnico = totalUnicoOriginal + ajusteUnicas;
+
+  // Separar vendas recorrentes e únicas (semanal) - para metas
+  const vendasRecorrentesSemana = salesInWeek.filter(s => s.recorrente);
+  const totalRecorrenteSemana = vendasRecorrentesSemana.reduce((acc, s) => acc + (s.valor || 0), 0);
+
   const ticketMedio = salesInMonth.length > 0 ? totalMonth / salesInMonth.length : 0;
   const cancelados = salesInMonth.filter((s) => s.status === 'cancelado').length;
   const totalClientes = salesInMonth.length;
   const turnOverRate = totalClientes > 0 ? (cancelados / totalClientes) * 100 : 0;
-  const faltaMeta = metaMensal > 0 ? Math.max(0, metaMensal - totalMonth) : 0;
-  const progressoMeta = metaMensal > 0 ? (totalMonth / metaMensal) * 100 : 0;
-  const metaBatida = metaMensal > 0 && totalMonth >= metaMensal;
+  
+  // METAS - Usam apenas vendas RECORRENTES
+  const faltaMeta = metaMensal > 0 ? Math.max(0, metaMensal - totalRecorrente) : 0;
+  const progressoMeta = metaMensal > 0 ? (totalRecorrente / metaMensal) * 100 : 0;
+  const metaBatida = metaMensal > 0 && totalRecorrente >= metaMensal;
 
-  // Gráfico todos os meses (últimos 12)
+  const faltaMetaSemanal = metaSemanal > 0 ? Math.max(0, metaSemanal - totalRecorrenteSemana) : 0;
+  const progressoMetaSemanal = metaSemanal > 0 ? (totalRecorrenteSemana / metaSemanal) * 100 : 0;
+  const metaSemanalBatida = metaSemanal > 0 && totalRecorrenteSemana >= metaSemanal;
+
+  // Gráfico de meses (Novembro até 12 meses à frente)
   const monthlyData = useMemo(() => {
     const data = [];
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
+    const now = new Date();
+    // Começar em Novembro do ano atual (ou anterior se já passou)
+    const startMonth = 10; // Novembro = mês 10 (0-indexed)
+    const startYear = now.getMonth() >= startMonth ? now.getFullYear() : now.getFullYear() - 1;
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(startYear, startMonth + i, 1);
+      const isFutureMonth = date > now;
+      
       const monthSales = sales.filter((s) => {
         if (!s.createdAt) return false;
         const saleDate = s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
@@ -721,11 +783,14 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
           saleDate.getFullYear() === date.getFullYear()
         );
       });
-      const total = monthSales.reduce((acc, s) => acc + (s.valor || 0), 0);
+      const total = isFutureMonth ? 0 : monthSales.reduce((acc, s) => acc + (s.valor || 0), 0);
       data.push({
         month: getShortMonthName(date.getMonth()),
+        year: date.getFullYear(),
         total: total,
-        count: monthSales.length,
+        count: isFutureMonth ? 0 : monthSales.length,
+        isFuture: isFutureMonth,
+        isCurrent: date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear(),
       });
     }
     return data;
@@ -793,10 +858,10 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
         <div className="grid grid-cols-12 grid-rows-12 gap-4 h-full">
           
           {/* Widget 1: Gráfico Total de Vendas de Todos os Meses */}
-          <div className="col-span-8 row-span-6 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
+          <div className="col-span-9 row-span-6 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
             <h3 className="text-white text-lg font-bold mb-3 flex items-center gap-2">
               <BarChart2 size={20} className="text-blue-400" />
-              Vendas - Últimos 12 Meses
+              Vendas - Nov/{new Date().getFullYear()} a Out/{new Date().getFullYear() + 1}
             </h3>
             <div className="h-[calc(100%-50px)] flex items-end justify-between gap-1.5 px-2">
               {monthlyData.map((month, i) => {
@@ -807,18 +872,30 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
                   <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
                     {/* Label valor */}
                     {month.total > 0 && (
-                      <div className="text-white text-[9px] font-bold whitespace-nowrap bg-gradient-to-r from-blue-500/80 to-cyan-500/80 px-1.5 py-0.5 rounded-full shadow-lg">
+                      <div className={`text-white text-[9px] font-bold whitespace-nowrap px-1.5 py-0.5 rounded-full shadow-lg ${
+                        month.isCurrent 
+                          ? 'bg-gradient-to-r from-emerald-500/80 to-green-500/80' 
+                          : 'bg-gradient-to-r from-blue-500/80 to-cyan-500/80'
+                      }`}>
                         {month.total >= 1000 ? `${(month.total / 1000).toFixed(1)}k` : month.total.toFixed(0)}
                       </div>
                     )}
                     
                     {/* Barra */}
                     <div 
-                      className="w-full bg-gradient-to-t from-blue-500 via-blue-400 to-cyan-300 rounded-t-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-400/50 hover:from-blue-400 hover:via-blue-300 hover:to-cyan-200 transition-all duration-300 relative group"
+                      className={`w-full rounded-t-xl shadow-lg transition-all duration-300 relative group ${
+                        month.isFuture 
+                          ? 'bg-gradient-to-t from-gray-600/50 via-gray-500/30 to-gray-400/20 shadow-gray-500/10 border border-dashed border-white/20' 
+                          : month.isCurrent
+                            ? 'bg-gradient-to-t from-emerald-500 via-green-400 to-emerald-300 shadow-emerald-500/30 hover:shadow-emerald-400/50 hover:from-emerald-400 hover:via-green-300 hover:to-emerald-200'
+                            : 'bg-gradient-to-t from-blue-500 via-blue-400 to-cyan-300 shadow-blue-500/30 hover:shadow-blue-400/50 hover:from-blue-400 hover:via-blue-300 hover:to-cyan-200'
+                      }`}
                       style={{ height: `${barHeight}%` }}
                     >
                       {/* Brilho interno */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 rounded-t-xl"></div>
+                      {!month.isFuture && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 rounded-t-xl"></div>
+                      )}
                       
                       {/* Contagem dentro da barra */}
                       {month.count > 0 && barHeight > 30 && (
@@ -829,14 +906,21 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
                       
                       {/* Tooltip hover */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap pointer-events-none shadow-xl">
-                        {formatCurrency(month.total)}
+                        {month.isFuture ? 'Mês futuro' : formatCurrency(month.total)}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
                       </div>
                     </div>
                     
                     {/* Label mês */}
-                    <div className="text-white/90 text-[10px] font-semibold mt-1">
+                    <div className={`text-[10px] font-semibold mt-1 ${
+                      month.isCurrent 
+                        ? 'text-emerald-300' 
+                        : month.isFuture 
+                          ? 'text-white/50' 
+                          : 'text-white/90'
+                    }`}>
                       {month.month}
+                      {month.isCurrent && <span className="ml-0.5">●</span>}
                     </div>
                   </div>
                 );
@@ -845,7 +929,7 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
           </div>
 
           {/* Widget 2: Carrossel Mês/Semana/Dia */}
-          <div className="col-span-4 row-span-6 bg-gradient-to-br from-slate-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl relative">
+          <div className="col-span-3 row-span-6 bg-gradient-to-br from-slate-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl relative">
             {/* Indicadores do carrossel */}
             <div className="absolute top-4 right-4 flex gap-1.5 z-10">
               {[0, 1, 2].map((i) => (
@@ -953,22 +1037,108 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
             </div>
           </div>
 
-          {/* Widget 3: Ticket Médio */}
-          <div className="col-span-3 row-span-6 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+          {/* Widget 3: Vendas Recorrentes (MRR) */}
+          <div className="col-span-6 row-span-4 bg-gradient-to-br from-purple-900/40 to-indigo-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent"></div>
+            
+            {/* Botão de edição */}
+            <button
+              onClick={() => setShowAjusteMRRModal(true)}
+              className="absolute top-3 right-3 p-1.5 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition group z-10"
+              title="Ajustar MRR"
+            >
+              <Edit2 size={14} className="text-white group-hover:text-purple-300" />
+            </button>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-lg shadow-lg shadow-purple-500/30">
+                  <Activity size={20} className="text-white" />
+                </div>
+                <h3 className="text-white text-sm font-bold">Recorrente</h3>
+              </div>
+              <div className="text-white text-2xl font-bold mb-2 drop-shadow-lg">
+                {formatCurrency(totalRecorrente)}
+              </div>
+              {ajusteMRR !== 0 && (
+                <div className="text-xs text-purple-300 font-semibold mb-2">
+                  Ajuste: {formatCurrency(ajusteMRR)}
+                </div>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <div className="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/20">
+                  <p className="text-white/80 text-xs font-medium">
+                    {vendasRecorrentes.length} {vendasRecorrentes.length === 1 ? 'venda' : 'vendas'}
+                  </p>
+                </div>
+                <div className="bg-purple-500/20 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-purple-400/30">
+                  <p className="text-purple-200 text-xs font-bold">
+                    {salesInMonth.length > 0 ? ((totalRecorrenteOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 4: Vendas Únicas */}
+          <div className="col-span-6 row-span-4 bg-gradient-to-br from-sky-900/40 to-blue-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 to-transparent"></div>
+            
+            {/* Botão de edição */}
+            <button
+              onClick={() => setShowAjusteUnicasModal(true)}
+              className="absolute top-3 right-3 p-1.5 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition group z-10"
+              title="Ajustar Vendas Únicas"
+            >
+              <Edit2 size={14} className="text-white group-hover:text-sky-300" />
+            </button>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-gradient-to-br from-sky-500 to-blue-500 p-2 rounded-lg shadow-lg shadow-sky-500/30">
+                  <ShoppingBag size={20} className="text-white" />
+                </div>
+                <h3 className="text-white text-sm font-bold">Vendas Únicas</h3>
+              </div>
+              <div className="text-white text-2xl font-bold mb-2 drop-shadow-lg">
+                {formatCurrency(totalUnico)}
+              </div>
+              {ajusteUnicas !== 0 && (
+                <div className="text-xs text-sky-300 font-semibold mb-2">
+                  Ajuste: {formatCurrency(ajusteUnicas)}
+                </div>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <div className="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/20">
+                  <p className="text-white/80 text-xs font-medium">
+                    {vendasUnicas.length} {vendasUnicas.length === 1 ? 'venda' : 'vendas'}
+                  </p>
+                </div>
+                <div className="bg-sky-500/20 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-sky-400/30">
+                  <p className="text-sky-200 text-xs font-bold">
+                    {salesInMonth.length > 0 ? ((totalUnicoOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Widget 5: Ticket Médio */}
+          <div className="col-span-3 row-span-12 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
             
             <div className="relative z-10 flex flex-col items-center">
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-3 rounded-2xl shadow-lg shadow-emerald-500/30 mb-3">
-                <DollarSign size={32} className="text-white" />
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-2 rounded-lg shadow-lg shadow-emerald-500/30 mb-3">
+                <DollarSign size={24} className="text-white" />
               </div>
-              <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
+              <h3 className="text-white/90 text-sm font-semibold mb-2 text-center">
                 Ticket Médio
               </h3>
-              <div className="text-white text-4xl font-bold mb-2 drop-shadow-lg">
+              <div className="text-white text-2xl font-bold mb-2 drop-shadow-lg">
                 {formatCurrency(ticketMedio)}
               </div>
-              <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+              <div className="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/20">
                 <p className="text-white/80 text-xs font-medium">
                   {salesInMonth.length} vendas
                 </p>
@@ -976,75 +1146,92 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
             </div>
           </div>
 
-          {/* Widget 4: Falta para Meta */}
-          <div className="col-span-6 row-span-6 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
+          {/* Widget 6: Meta do Mês / Semana (Carrossel) */}
+          <div className="col-span-6 row-span-12 bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent"></div>
+            
+            {/* Indicadores do carrossel */}
+            <div className="absolute top-4 right-4 flex gap-1.5 z-10">
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === metaIndex ? 'bg-gradient-to-r from-orange-400 to-amber-400 w-6 shadow-lg' : 'bg-white/30 w-1.5'
+                  }`}
+                />
+              ))}
+            </div>
             
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-3">
                 <div className="bg-gradient-to-br from-orange-500 to-amber-500 p-2 rounded-xl shadow-lg shadow-orange-500/30">
                   <Target size={24} className="text-white" />
                 </div>
-                <h3 className="text-white text-base font-bold">Meta do Mês</h3>
+                <h3 className="text-white text-base font-bold">
+                  {metaIndex === 0 ? 'Meta do Mês' : 'Meta da Semana'}
+                  <span className="text-xs font-normal text-white/60 ml-2">(Recorrente)</span>
+                </h3>
               </div>
               <div className="space-y-2.5">
                 <div>
                   <div className="flex justify-between text-white/90 text-xs mb-1">
-                    <span>Realizado</span>
-                    <span className="font-bold">{progressoMeta.toFixed(1)}%</span>
+                    <span>Realizado (MRR)</span>
+                    <span className="font-bold">
+                      {metaIndex === 0 ? progressoMeta.toFixed(1) : progressoMetaSemanal.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/20">
                     <div
                       className="bg-gradient-to-r from-orange-400 to-amber-400 h-full rounded-full transition-all duration-500 shadow-lg"
-                      style={{ width: `${Math.min(progressoMeta, 100)}%` }}
+                      style={{ width: `${Math.min(metaIndex === 0 ? progressoMeta : progressoMetaSemanal, 100)}%` }}
                     />
                   </div>
                 </div>
                 <div className="text-white text-2xl font-bold drop-shadow-lg">
-                  {formatCurrency(totalMonth)}
+                  {formatCurrency(metaIndex === 0 ? totalRecorrente : totalRecorrenteSemana)}
                 </div>
                 <div className="text-white/70 text-sm font-medium">
-                  de {formatCurrency(metaMensal)}
+                  de {formatCurrency(metaIndex === 0 ? metaMensal : metaSemanal)}
                 </div>
-                {metaMensal === 0 ? (
+                {(metaIndex === 0 ? metaMensal : metaSemanal) === 0 ? (
                   <div className="text-orange-300 text-xs font-semibold flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-1.5 rounded-lg border border-orange-500/20">
                     <Target size={14} />
                     Configure uma meta
                   </div>
-                ) : metaBatida ? (
+                ) : (metaIndex === 0 ? metaBatida : metaSemanalBatida) ? (
                   <div className="text-green-300 text-sm font-semibold flex items-center gap-1.5 bg-green-500/20 px-2.5 py-1.5 rounded-lg border border-green-500/30">
                     <CheckCircle size={16} />
                     Meta Batida! 🎉
                   </div>
                 ) : (
                   <div className="text-yellow-300 text-sm font-semibold bg-yellow-500/10 px-2.5 py-1.5 rounded-lg border border-yellow-500/20">
-                    Faltam {formatCurrency(faltaMeta)}
+                    Faltam {formatCurrency(metaIndex === 0 ? faltaMeta : faltaMetaSemanal)}
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Widget 5: Cancelamentos (Carrossel) */}
-          <div className="col-span-3 row-span-6 bg-gradient-to-br from-red-900/40 to-rose-900/40 backdrop-blur-xl rounded-3xl p-5 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
+          {/* Widget 7: Cancelamentos (Carrossel) */}
+          <div className="col-span-3 row-span-12 bg-gradient-to-br from-red-900/40 to-rose-900/40 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl flex flex-col justify-center items-center relative overflow-hidden">
             {/* Efeito de fundo */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent"></div>
             
             <div className="relative z-10 flex flex-col items-center">
-              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-3 rounded-2xl shadow-lg shadow-red-500/30 mb-3">
-                <XCircle size={32} className="text-white" />
+              <div className="bg-gradient-to-br from-red-500 to-rose-500 p-2 rounded-lg shadow-lg shadow-red-500/30 mb-2">
+                <XCircle size={24} className="text-white" />
               </div>
               
               {canceladosIndex === 0 ? (
                 <>
-                  <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
+                  <h3 className="text-white/90 text-sm font-semibold mb-1 text-center">
                     Cancelamentos
                   </h3>
-                  <div className="text-white text-5xl font-bold mb-2 drop-shadow-lg">
+                  <div className="text-white text-3xl font-bold mb-1 drop-shadow-lg">
                     {cancelados}
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                  <div className="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/20">
                     <p className="text-white/80 text-xs font-medium">
                       no mês atual
                     </p>
@@ -1052,13 +1239,13 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
                 </>
               ) : (
                 <>
-                  <h3 className="text-white/90 text-base font-semibold mb-2 text-center">
+                  <h3 className="text-white/90 text-sm font-semibold mb-1 text-center">
                     Turn Over
                   </h3>
-                  <div className="text-white text-5xl font-bold mb-2 drop-shadow-lg">
+                  <div className="text-white text-3xl font-bold mb-1 drop-shadow-lg">
                     {turnOverRate.toFixed(1)}%
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                  <div className="bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/20">
                     <p className="text-white/80 text-xs font-medium">
                       taxa de cancelamento
                     </p>
@@ -1067,6 +1254,7 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
               )}
             </div>
           </div>
+
 
         </div>
       </div>
@@ -1082,7 +1270,7 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
         })}
       </div>
 
-      {/* Modal de Ajuste */}
+      {/* Modal de Ajuste Faturamento */}
       {showAjusteModal && (
         <AjusteFaturamentoModal
           onClose={() => setShowAjusteModal(false)}
@@ -1091,13 +1279,40 @@ const TVDashboard = ({ sales, metaMensal, onBack, ajusteFaturamento, onSaveAjust
           ajusteAtual={ajusteFaturamento}
         />
       )}
+      
+      {/* Modal de Ajuste MRR */}
+      {showAjusteMRRModal && (
+        <AjusteFaturamentoModal
+          onClose={() => setShowAjusteMRRModal(false)}
+          onSave={onSaveAjusteMRR}
+          valorAtual={totalRecorrenteOriginal}
+          ajusteAtual={ajusteMRR}
+          titulo="Ajustar MRR"
+          subtitulo="Adicione ou subtraia valores do MRR"
+          cor="purple"
+        />
+      )}
+      
+      {/* Modal de Ajuste Vendas Únicas */}
+      {showAjusteUnicasModal && (
+        <AjusteFaturamentoModal
+          onClose={() => setShowAjusteUnicasModal(false)}
+          onSave={onSaveAjusteUnicas}
+          valorAtual={totalUnicoOriginal}
+          ajusteAtual={ajusteUnicas}
+          titulo="Ajustar Vendas Únicas"
+          subtitulo="Adicione ou subtraia valores das vendas únicas"
+          cor="sky"
+        />
+      )}
     </div>
   );
 };
 
 // --- CONFIGURAÇÕES DE META ---
-const MetaSettings = () => {
-  const [meta, setMeta] = useState('');
+const MetaSettings = ({ onTransferToRecorrente, loading: externalLoading }) => {
+  const [metaMensal, setMetaMensal] = useState('');
+  const [metaSemanal, setMetaSemanal] = useState('');
   const [metas, setMetas] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -1116,16 +1331,34 @@ const MetaSettings = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!meta) return;
+    if (!metaMensal && !metaSemanal) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'metas'), {
-        valor: parseFloat(meta),
-        mes: new Date().getMonth(),
-        ano: new Date().getFullYear(),
-        createdAt: serverTimestamp(),
-      });
-      setMeta('');
+      const mes = new Date().getMonth();
+      const ano = new Date().getFullYear();
+      
+      if (metaMensal) {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'metas'), {
+          valor: parseFloat(metaMensal),
+          mes,
+          ano,
+          tipo: 'mensal',
+          createdAt: serverTimestamp(),
+        });
+      }
+      
+      if (metaSemanal) {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'metas'), {
+          valor: parseFloat(metaSemanal),
+          mes,
+          ano,
+          tipo: 'semanal',
+          createdAt: serverTimestamp(),
+        });
+      }
+      
+      setMetaMensal('');
+      setMetaSemanal('');
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar meta');
@@ -1140,8 +1373,11 @@ const MetaSettings = () => {
     }
   };
 
-  const metaAtual = metas.find(
-    (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear()
+  const metaMensalAtual = metas.find(
+    (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear() && m.tipo === 'mensal'
+  );
+  const metaSemanalAtual = metas.find(
+    (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear() && m.tipo === 'semanal'
   );
 
   return (
@@ -1157,39 +1393,71 @@ const MetaSettings = () => {
       </div>
 
       {/* Meta Atual */}
-      {metaAtual && (
-        <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-6 rounded-xl text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold opacity-90">Meta deste mês</h3>
-              <div className="text-4xl font-bold mt-2">
-                {formatCurrency(metaAtual.valor)}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {metaMensalAtual && (
+          <div className="bg-gradient-to-r from-orange-500 to-yellow-500 p-6 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold opacity-90">Meta do Mês</h3>
+                <div className="text-4xl font-bold mt-2">
+                  {formatCurrency(metaMensalAtual.valor)}
+                </div>
               </div>
+              <Target size={64} className="opacity-20" />
             </div>
-            <Target size={64} className="opacity-20" />
           </div>
-        </div>
-      )}
+        )}
+        {metaSemanalAtual && (
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold opacity-90">Meta da Semana</h3>
+                <div className="text-4xl font-bold mt-2">
+                  {formatCurrency(metaSemanalAtual.valor)}
+                </div>
+              </div>
+              <Target size={64} className="opacity-20" />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Formulário */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-700 mb-4">Definir Meta</h3>
-        <form onSubmit={handleSave} className="flex gap-4">
-          <input
-            type="number"
-            step="0.01"
-            value={meta}
-            onChange={(e) => setMeta(e.target.value)}
-            className="flex-1 p-3 border rounded-lg text-lg"
-            placeholder="Valor da meta (R$)"
-            required
-          />
+        <h3 className="font-bold text-gray-700 mb-4">Definir Metas</h3>
+        <form onSubmit={handleSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Meta do Mês (R$)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={metaMensal}
+              onChange={(e) => setMetaMensal(e.target.value)}
+              className="w-full p-3 border rounded-lg text-lg"
+              placeholder="Ex: 50000.00"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Meta da Semana (R$)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={metaSemanal}
+              onChange={(e) => setMetaSemanal(e.target.value)}
+              className="w-full p-3 border rounded-lg text-lg"
+              placeholder="Ex: 12500.00"
+            />
+          </div>
           <button
             type="submit"
             disabled={loading}
-            className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50"
+            className="w-full bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50"
           >
-            {loading ? 'Salvando...' : 'Salvar Meta'}
+            {loading ? 'Salvando...' : 'Salvar Metas'}
           </button>
         </form>
       </div>
@@ -1234,7 +1502,7 @@ const MetaSettings = () => {
 };
 
 // --- DASHBOARD PADRÃO ---
-const Dashboard = ({ sales, leads, ajusteFaturamento, onSaveAjuste }) => {
+const Dashboard = ({ sales, ajusteFaturamento, onSaveAjuste }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAjusteModal, setShowAjusteModal] = useState(false);
 
@@ -1248,17 +1516,19 @@ const Dashboard = ({ sales, leads, ajusteFaturamento, onSaveAjuste }) => {
   };
 
   const salesInMonth = sales.filter((s) => isSameMonth(s.createdAt));
-  const leadsInMonth = leads.filter((l) => isSameMonth(l.createdAt));
-  const convertedLeads = leadsInMonth.filter((l) => l.status === 'convertido').length;
-  const taxaConversao = leadsInMonth.length > 0 
-    ? ((convertedLeads / leadsInMonth.length) * 100).toFixed(1) 
-    : 0;
 
   const totalVendasOriginal = salesInMonth.reduce(
     (acc, curr) => acc + (curr.valor || 0),
     0
   );
   const totalVendas = totalVendasOriginal + ajusteFaturamento;
+  
+  // Separar vendas recorrentes e únicas
+  const vendasRecorrentes = salesInMonth.filter(s => s.recorrente);
+  const vendasUnicas = salesInMonth.filter(s => !s.recorrente);
+  const totalRecorrente = vendasRecorrentes.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+  const totalUnico = vendasUnicas.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+  
   const totalComissao = salesInMonth.reduce(
     (acc, curr) => acc + (curr.comissaoValor || 0),
     0
@@ -1299,20 +1569,13 @@ const Dashboard = ({ sales, leads, ajusteFaturamento, onSaveAjuste }) => {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-          title="Leads"
-          value={leadsInMonth.length}
-          icon={Users}
+          title="Total de Vendas"
+          value={salesInMonth.length}
+          icon={ShoppingBag}
           colorClass="bg-indigo-100 text-indigo-600"
-          subtext={`${convertedLeads} convertidos`}
-        />
-        <StatCard
-          title="Taxa de Conversão"
-          value={`${taxaConversao}%`}
-          icon={TrendingUp}
-          colorClass="bg-purple-100 text-purple-600"
-          subtext={`${salesInMonth.length} vendas`}
+          subtext="vendas no mês"
         />
         <StatCard
           title="Faturamento"
@@ -1329,6 +1592,42 @@ const Dashboard = ({ sales, leads, ajusteFaturamento, onSaveAjuste }) => {
           icon={Receipt}
           colorClass="bg-rose-100 text-rose-600"
         />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-700 p-6 rounded-2xl shadow-lg text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Activity size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold opacity-90">Receita Recorrente (MRR)</h3>
+              <p className="text-2xl font-bold">{formatCurrency(totalRecorrente)}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="opacity-90">{vendasRecorrentes.length} vendas recorrentes</span>
+            <span className="font-semibold bg-white/20 px-3 py-1 rounded-full">
+              {salesInMonth.length > 0 ? ((totalRecorrente / totalVendasOriginal) * 100).toFixed(0) : 0}%
+            </span>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-2xl shadow-lg text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <ShoppingBag size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold opacity-90">Vendas Únicas</h3>
+              <p className="text-2xl font-bold">{formatCurrency(totalUnico)}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="opacity-90">{vendasUnicas.length} vendas únicas</span>
+            <span className="font-semibold bg-white/20 px-3 py-1 rounded-full">
+              {salesInMonth.length > 0 ? ((totalUnico / totalVendasOriginal) * 100).toFixed(0) : 0}%
+            </span>
+          </div>
+        </div>
       </div>
       {showAjusteModal && (
         <AjusteFaturamentoModal
@@ -2679,10 +2978,14 @@ const ProductCatalog = ({ products, onAddProduct, onDeleteProduct }) => {
 const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [filtroRecorrencia, setFiltroRecorrencia] = useState('todos'); // 'todos', 'recorrente', 'unico'
   const filtered = sales.filter(
     (s) =>
-      s.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.vendedor.toLowerCase().includes(searchTerm.toLowerCase())
+      (s.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.vendedor.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filtroRecorrencia === 'todos' || 
+       (filtroRecorrencia === 'recorrente' && s.recorrente) ||
+       (filtroRecorrencia === 'unico' && !s.recorrente))
   );
 
   return (
@@ -2690,15 +2993,50 @@ const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient }) => {
       <div className="space-y-6 animate-in fade-in duration-500 pb-10">
         <div className="flex justify-between items-center bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
           <h2 className="text-lg font-bold text-gray-800">Clientes</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border rounded-lg text-sm w-64 outline-none focus:border-blue-500"
-            />
+          <div className="flex gap-3 items-center">
+            <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setFiltroRecorrencia('todos')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  filtroRecorrencia === 'todos'
+                    ? 'bg-white text-gray-800 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFiltroRecorrencia('recorrente')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${
+                  filtroRecorrencia === 'recorrente'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Activity size={14} />
+                Recorrente
+              </button>
+              <button
+                onClick={() => setFiltroRecorrencia('unico')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  filtroRecorrencia === 'unico'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Único
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 border rounded-lg text-sm w-64 outline-none focus:border-blue-500"
+              />
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -2719,7 +3057,15 @@ const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient }) => {
                     className="p-4 font-medium text-blue-600 cursor-pointer"
                     onClick={() => setSelectedClient(s)}
                   >
-                    {s.razaoSocial}
+                    <div className="flex items-center gap-2">
+                      {s.razaoSocial}
+                      {s.recorrente && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
+                          <Activity size={12} />
+                          MRR
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-4 text-gray-600">{s.vendedor}</td>
                   <td className="p-4 font-medium">{formatCurrency(s.valor)}</td>
@@ -2776,6 +3122,7 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
     estado: '',
     segmento: '',
     leadId: leadToConvert?.id || null,
+    recorrente: false,
   });
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({
@@ -2853,6 +3200,7 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
         ? Timestamp.fromDate(new Date(formData.dataAtivacao))
         : null,
       leadId: formData.leadId,
+      recorrente: formData.recorrente,
     });
     setItems([]);
     setFormData({
@@ -2866,6 +3214,7 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
       estado: '',
       segmento: '',
       leadId: null,
+      recorrente: false,
     });
   };
 
@@ -2963,6 +3312,27 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
               </option>
             ))}
           </select>
+        </div>
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.recorrente}
+              onChange={(e) =>
+                setFormData({ ...formData, recorrente: e.target.checked })
+              }
+              className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-gray-800 flex items-center gap-2">
+                <Activity size={18} className="text-purple-600" />
+                Venda Recorrente (MRR)
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Marque se esta venda gera receita mensal recorrente
+              </div>
+            </div>
+          </label>
         </div>
         <div className="bg-blue-50 p-4 rounded border border-blue-100">
           <div className="flex gap-2 items-end mb-2">
@@ -3076,8 +3446,11 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
   const [metaMensal, setMetaMensal] = useState(0);
+  const [metaSemanal, setMetaSemanal] = useState(0);
   const [ajusteFaturamento, setAjusteFaturamento] = useState(0);
   const [motivoAjuste, setMotivoAjuste] = useState('');
+  const [ajusteMRR, setAjusteMRR] = useState(0);
+  const [ajusteUnicas, setAjusteUnicas] = useState(0);
 
   // Carrega dados sem autenticação
   useEffect(() => {
@@ -3125,7 +3498,7 @@ export default function App() {
       (s) => setUsuarios(s.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
     
-    // Listener para meta mensal
+    // Listener para metas - separado por tipo (mensal e semanal)
     const unsubM = onSnapshot(
       query(
         collection(db, 'artifacts', appId, 'public', 'data', 'metas'),
@@ -3133,14 +3506,24 @@ export default function App() {
       ),
       (snapshot) => {
         const metas = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        const metaAtual = metas.find(
-          (m) => m.mes === new Date().getMonth() && m.ano === new Date().getFullYear()
+        const mesAtual = new Date().getMonth();
+        const anoAtual = new Date().getFullYear();
+        
+        // Buscar meta mensal
+        const metaMensalAtual = metas.find(
+          (m) => m.mes === mesAtual && m.ano === anoAtual && m.tipo === 'mensal'
         );
-        setMetaMensal(metaAtual?.valor || 0);
+        setMetaMensal(metaMensalAtual?.valor || 0);
+        
+        // Buscar meta semanal
+        const metaSemanalAtual = metas.find(
+          (m) => m.mes === mesAtual && m.ano === anoAtual && m.tipo === 'semanal'
+        );
+        setMetaSemanal(metaSemanalAtual?.valor || 0);
       }
     );
     
-    // Listener para ajustes de faturamento
+    // Listener para ajustes de faturamento, MRR e Vendas Únicas
     const unsubA = onSnapshot(
       query(
         collection(db, 'artifacts', appId, 'public', 'data', 'ajustes'),
@@ -3148,12 +3531,32 @@ export default function App() {
       ),
       (snapshot) => {
         const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        const ajusteAtual = ajustes.find(
-          (a) => a.mes === new Date().getMonth() && a.ano === new Date().getFullYear()
+        const mesAtual = new Date().getMonth();
+        const anoAtual = new Date().getFullYear();
+        
+        // Ajuste de faturamento
+        const ajusteFat = ajustes.find(
+          (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'faturamento'
         );
-        if (ajusteAtual) {
-          setAjusteFaturamento(ajusteAtual.valor || 0);
-          setMotivoAjuste(ajusteAtual.motivo || '');
+        if (ajusteFat) {
+          setAjusteFaturamento(ajusteFat.valor || 0);
+          setMotivoAjuste(ajusteFat.motivo || '');
+        }
+        
+        // Ajuste de MRR
+        const ajusteMrrAtual = ajustes.find(
+          (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'mrr'
+        );
+        if (ajusteMrrAtual) {
+          setAjusteMRR(ajusteMrrAtual.valor || 0);
+        }
+        
+        // Ajuste de Vendas Únicas
+        const ajusteUnicasAtual = ajustes.find(
+          (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'unicas'
+        );
+        if (ajusteUnicasAtual) {
+          setAjusteUnicas(ajusteUnicasAtual.valor || 0);
         }
       }
     );
@@ -3204,6 +3607,35 @@ export default function App() {
     if (confirm('Excluir?'))
       deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sales', id));
   };
+  
+  // Função para transferir todas as vendas para recorrentes
+  const handleTransferToRecorrente = async () => {
+    if (!confirm('Deseja marcar TODAS as vendas como recorrentes? Esta ação afetará todas as vendas existentes.')) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const vendasNaoRecorrentes = sales.filter(s => !s.recorrente);
+      let count = 0;
+      
+      for (const venda of vendasNaoRecorrentes) {
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'public', 'data', 'sales', venda.id),
+          { recorrente: true }
+        );
+        count++;
+      }
+      
+      alert(`✅ ${count} vendas foram marcadas como recorrentes!`);
+    } catch (error) {
+      console.error('Erro ao transferir vendas:', error);
+      alert('Erro ao transferir vendas. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleAddProduct = (data) =>
     addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
       ...data,
@@ -3280,7 +3712,7 @@ export default function App() {
       
       const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const ajusteExistente = ajustes.find(
-        (a) => a.mes === mesAtual && a.ano === anoAtual
+        (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'faturamento'
       );
       
       const ajusteData = {
@@ -3288,6 +3720,7 @@ export default function App() {
         motivo: novoMotivo,
         mes: mesAtual,
         ano: anoAtual,
+        tipo: 'faturamento',
         updatedAt: serverTimestamp(),
       };
       
@@ -3309,6 +3742,100 @@ export default function App() {
       setMotivoAjuste(novoMotivo);
     } catch (error) {
       console.error('Erro ao salvar ajuste:', error);
+      alert('Erro ao salvar ajuste. Tente novamente.');
+    }
+  };
+
+  const handleSaveAjusteMRR = async (novoAjuste, novoMotivo) => {
+    try {
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      
+      const ajustesRef = collection(db, 'artifacts', appId, 'public', 'data', 'ajustes');
+      const q = query(ajustesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await new Promise((resolve) => {
+        const unsubscribe = onSnapshot(q, (snap) => {
+          unsubscribe();
+          resolve(snap);
+        });
+      });
+      
+      const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const ajusteExistente = ajustes.find(
+        (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'mrr'
+      );
+      
+      const ajusteData = {
+        valor: novoAjuste,
+        motivo: novoMotivo,
+        mes: mesAtual,
+        ano: anoAtual,
+        tipo: 'mrr',
+        updatedAt: serverTimestamp(),
+      };
+      
+      if (ajusteExistente) {
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'public', 'data', 'ajustes', ajusteExistente.id),
+          ajusteData
+        );
+      } else {
+        await addDoc(ajustesRef, {
+          ...ajusteData,
+          createdAt: serverTimestamp(),
+        });
+      }
+      
+      setAjusteMRR(novoAjuste);
+    } catch (error) {
+      console.error('Erro ao salvar ajuste MRR:', error);
+      alert('Erro ao salvar ajuste. Tente novamente.');
+    }
+  };
+
+  const handleSaveAjusteUnicas = async (novoAjuste, novoMotivo) => {
+    try {
+      const mesAtual = new Date().getMonth();
+      const anoAtual = new Date().getFullYear();
+      
+      const ajustesRef = collection(db, 'artifacts', appId, 'public', 'data', 'ajustes');
+      const q = query(ajustesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await new Promise((resolve) => {
+        const unsubscribe = onSnapshot(q, (snap) => {
+          unsubscribe();
+          resolve(snap);
+        });
+      });
+      
+      const ajustes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const ajusteExistente = ajustes.find(
+        (a) => a.mes === mesAtual && a.ano === anoAtual && a.tipo === 'unicas'
+      );
+      
+      const ajusteData = {
+        valor: novoAjuste,
+        motivo: novoMotivo,
+        mes: mesAtual,
+        ano: anoAtual,
+        tipo: 'unicas',
+        updatedAt: serverTimestamp(),
+      };
+      
+      if (ajusteExistente) {
+        await updateDoc(
+          doc(db, 'artifacts', appId, 'public', 'data', 'ajustes', ajusteExistente.id),
+          ajusteData
+        );
+      } else {
+        await addDoc(ajustesRef, {
+          ...ajusteData,
+          createdAt: serverTimestamp(),
+        });
+      }
+      
+      setAjusteUnicas(novoAjuste);
+    } catch (error) {
+      console.error('Erro ao salvar ajuste Vendas Únicas:', error);
       alert('Erro ao salvar ajuste. Tente novamente.');
     }
   };
@@ -3681,7 +4208,7 @@ export default function App() {
               continue;
             }
 
-            await addDoc(collection(db, 'sales'), clientData);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sales'), clientData);
             imported++;
           } catch (err) {
             console.error('Erro ao importar linha:', err);
@@ -3867,9 +4394,14 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
       <TVDashboard
         sales={sales}
         metaMensal={metaMensal}
+        metaSemanal={metaSemanal}
         onBack={() => setCurrentView('dashboard')}
         ajusteFaturamento={ajusteFaturamento}
         onSaveAjuste={handleSaveAjusteFaturamento}
+        ajusteMRR={ajusteMRR}
+        ajusteUnicas={ajusteUnicas}
+        onSaveAjusteMRR={handleSaveAjusteMRR}
+        onSaveAjusteUnicas={handleSaveAjusteUnicas}
       />
     );
   }
@@ -3886,7 +4418,6 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
           <NavItem view="tv-dashboard" icon={Tv} label="TV Dashboard" />
           <NavItem view="analytics" icon={Activity} label="Analytics" />
           <NavItem view="reports" icon={BarChart2} label="Relatórios" />
-          <NavItem view="leads" icon={Users} label="Leads" />
           <NavItem view="new" icon={PlusCircle} label="Nova Venda" />
           <NavItem view="list" icon={FileText} label="Clientes" />
           <NavItem view="import-csv" icon={Upload} label="Importar CSV" />
@@ -3954,7 +4485,6 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
             <NavItem view="tv-dashboard" icon={Tv} label="TV Dashboard" />
             <NavItem view="analytics" icon={Activity} label="Analytics" />
             <NavItem view="reports" icon={BarChart2} label="Relatórios" />
-            <NavItem view="leads" icon={Users} label="Leads" />
             <NavItem view="new" icon={PlusCircle} label="Nova Venda" />
             <NavItem view="list" icon={FileText} label="Clientes" />
             <NavItem view="import-csv" icon={Upload} label="Importar CSV" />
@@ -3977,8 +4507,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
         <div className="max-w-6xl mx-auto">
           {currentView === 'dashboard' && (
             <Dashboard 
-              sales={sales} 
-              leads={leads}
+              sales={sales}
               ajusteFaturamento={ajusteFaturamento}
               onSaveAjuste={handleSaveAjusteFaturamento}
             />
@@ -3986,17 +4515,6 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
           {currentView === 'analytics' && <AnalyticsView sales={sales} />}
           {currentView === 'reports' && (
             <ReportsView sales={sales} vendedores={vendedores} />
-          )}
-          {currentView === 'leads' && (
-            <LeadsManager
-              leads={leads}
-              vendedores={vendedores}
-              onAddLead={handleAddLead}
-              onUpdateLead={handleUpdateLead}
-              onDeleteLead={handleDeleteLead}
-              onConvertLead={handleConvertLead}
-              onAddLeadsBatch={handleAddLeadsBatch}
-            />
           )}
           {currentView === 'vendedores' && (
             <VendedoresManager
@@ -4012,7 +4530,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
               onDeleteProduct={handleDeleteProduct}
             />
           )}
-          {currentView === 'metas' && <MetaSettings />}
+          {currentView === 'metas' && <MetaSettings onTransferToRecorrente={handleTransferToRecorrente} loading={loading} />}
           {currentView === 'import-csv' && <ImportCSV />}
           {currentView === 'new' && (
             <SalesForm

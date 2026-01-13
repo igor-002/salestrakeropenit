@@ -550,6 +550,9 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
   const [dataAtivacao, setDataAtivacao] = useState(
     toInputDate(client.dataAtivacao)
   );
+  const [dataVenda, setDataVenda] = useState(
+    toInputDate(client.createdAt)
+  );
   const [saving, setSaving] = useState(false);
   const [emailDraft, setEmailDraft] = useState('');
   const [generatingEmail, setGeneratingEmail] = useState(false);
@@ -557,12 +560,21 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
 
   const handleSave = async () => {
     setSaving(true);
-    await onSaveClient(client.id, {
+    const updates = {
       observacoes: obs,
       dataAtivacao: dataAtivacao
-        ? Timestamp.fromDate(new Date(dataAtivacao))
+        ? Timestamp.fromDate((() => {
+            const [year, month, day] = dataAtivacao.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0);
+          })())
         : null,
-    });
+    };
+    // Se a data da venda foi alterada, atualiza o createdAt
+    if (dataVenda && toInputDate(client.createdAt) !== dataVenda) {
+      const [year, month, day] = dataVenda.split('-').map(Number);
+      updates.createdAt = Timestamp.fromDate(new Date(year, month - 1, day, 12, 0, 0));
+    }
+    await onSaveClient(client.id, updates);
     setSaving(false);
     onClose();
   };
@@ -614,6 +626,17 @@ const ClientCardModal = ({ client, onClose, onSaveClient }) => {
                 {client.vendedor}
               </div>
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+              Data da Venda
+            </label>
+            <input
+              type="date"
+              value={dataVenda}
+              onChange={(e) => setDataVenda(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
@@ -731,6 +754,14 @@ const TVDashboard = ({ sales, metaMensal, metaSemanal, onBack, ajusteFaturamento
   const salesInMonth = sales.filter((s) => isSameMonth(s.createdAt));
   const salesInWeek = sales.filter((s) => isSameWeek(s.createdAt));
   const salesToday = sales.filter((s) => isToday(s.createdAt));
+
+  // Debug: Log das vendas do mês
+  console.log('TVDashboard - Total vendas:', sales.length);
+  console.log('TVDashboard - Vendas do mês:', salesInMonth.length);
+  console.log('TVDashboard - selectedDate:', selectedDate);
+  if (salesInMonth.length > 0) {
+    console.log('TVDashboard - Primeira venda do mês:', salesInMonth[0]);
+  }
 
   const totalMonthOriginal = salesInMonth.reduce((acc, s) => acc + (s.valor || 0), 0);
   const totalMonth = totalMonthOriginal + ajusteFaturamento;
@@ -1073,7 +1104,7 @@ const TVDashboard = ({ sales, metaMensal, metaSemanal, onBack, ajusteFaturamento
                 </div>
                 <div className="bg-purple-500/20 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-purple-400/30">
                   <p className="text-purple-200 text-xs font-bold">
-                    {salesInMonth.length > 0 ? ((totalRecorrenteOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
+                    {totalMonthOriginal > 0 ? ((totalRecorrenteOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
                   </p>
                 </div>
               </div>
@@ -1116,7 +1147,7 @@ const TVDashboard = ({ sales, metaMensal, metaSemanal, onBack, ajusteFaturamento
                 </div>
                 <div className="bg-sky-500/20 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-sky-400/30">
                   <p className="text-sky-200 text-xs font-bold">
-                    {salesInMonth.length > 0 ? ((totalUnicoOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
+                    {totalMonthOriginal > 0 ? ((totalUnicoOriginal / totalMonthOriginal) * 100).toFixed(0) : 0}% do total
                   </p>
                 </div>
               </div>
@@ -2975,7 +3006,7 @@ const ProductCatalog = ({ products, onAddProduct, onDeleteProduct }) => {
 };
 
 // --- LISTA DE VENDAS ---
-const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient }) => {
+const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient, onToggleRecorrente }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [filtroRecorrencia, setFiltroRecorrencia] = useState('todos'); // 'todos', 'recorrente', 'unico'
@@ -3085,12 +3116,21 @@ const SalesList = ({ sales, onDelete, onUpdateStatus, onUpdateClient }) => {
                     </select>
                   </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => onDelete(s.id)}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onToggleRecorrente(s.id, !s.recorrente)}
+                        className={`p-1.5 rounded-lg transition-all ${s.recorrente ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' : 'bg-gray-100 text-gray-400 hover:bg-purple-50 hover:text-purple-500'}`}
+                        title={s.recorrente ? 'Remover recorrência' : 'Marcar como recorrente'}
+                      >
+                        <Activity size={16} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(s.id)}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -3118,6 +3158,7 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
     status: 'aguardando',
     observacoes: leadToConvert?.observacoes || '',
     dataAtivacao: '',
+    dataVenda: new Date().toISOString().split('T')[0], // Data da venda (hoje por padrão)
     comissaoPorcentagem: '10',
     estado: '',
     segmento: '',
@@ -3197,10 +3238,19 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
       comissaoPorcentagem: parseFloat(formData.comissaoPorcentagem),
       items,
       dataAtivacao: formData.dataAtivacao
-        ? Timestamp.fromDate(new Date(formData.dataAtivacao))
+        ? Timestamp.fromDate((() => {
+            const [year, month, day] = formData.dataAtivacao.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0);
+          })())
+        : null,
+      dataVenda: formData.dataVenda
+        ? Timestamp.fromDate((() => {
+            const [year, month, day] = formData.dataVenda.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0);
+          })())
         : null,
       leadId: formData.leadId,
-      recorrente: formData.recorrente,
+      recorrente: formData.recorrente === true, // Garantir que é boolean
     });
     setItems([]);
     setFormData({
@@ -3210,6 +3260,7 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
       status: 'aguardando',
       observacoes: '',
       dataAtivacao: '',
+      dataVenda: new Date().toISOString().split('T')[0],
       comissaoPorcentagem: '10',
       estado: '',
       segmento: '',
@@ -3312,6 +3363,19 @@ const SalesForm = ({ onSave, loading, products, vendedores, leadToConvert }) => 
               </option>
             ))}
           </select>
+          <div className="relative">
+            <label className="absolute -top-2 left-2 bg-white px-1 text-xs font-semibold text-gray-500">
+              Data da Venda
+            </label>
+            <input
+              type="date"
+              value={formData.dataVenda}
+              onChange={(e) =>
+                setFormData({ ...formData, dataVenda: e.target.value })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
         </div>
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
           <label className="flex items-center gap-3 cursor-pointer">
@@ -3575,9 +3639,22 @@ export default function App() {
   const handleAddSale = async (data) => {
     setLoading(true);
     try {
+      // Usar dataVenda se fornecida, senão usar data atual
+      let createdAt = serverTimestamp();
+      if (data.dataVenda) {
+        // dataVenda já é um Timestamp do Firestore
+        createdAt = data.dataVenda;
+      }
+      
+      // Remover dataVenda do objeto para não duplicar
+      const { dataVenda, ...saleData } = data;
+      
+      // Debug: verificar dados antes de salvar
+      console.log('Salvando venda:', { ...saleData, createdAt, recorrente: saleData.recorrente });
+      
       await addDoc(
         collection(db, 'artifacts', appId, 'public', 'data', 'sales'),
-        { ...data, createdAt: serverTimestamp() }
+        { ...saleData, createdAt }
       );
       
       // Se veio de um lead, marcar como convertido
@@ -3607,6 +3684,10 @@ export default function App() {
     if (confirm('Excluir?'))
       deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sales', id));
   };
+  
+  // Função para alternar recorrência de uma venda
+  const handleToggleRecorrente = (id, recorrente) =>
+    updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sales', id), { recorrente });
   
   // Função para transferir todas as vendas para recorrentes
   const handleTransferToRecorrente = async () => {
@@ -4547,6 +4628,7 @@ Comércio XYZ SA,98.765.432/0001-11,vendas@comercio.com,11988888888,987.654.321-
               onDelete={handleDelete}
               onUpdateStatus={handleUpdateStatus}
               onUpdateClient={handleUpdateClient}
+              onToggleRecorrente={handleToggleRecorrente}
             />
           )}
         </div>
